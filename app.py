@@ -37,6 +37,36 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# --- חלון קופץ: יומן שינויים (Changelog) ---
+@st.dialog("📜 יומן שינויים (Changelog)")
+def show_changelog():
+    st.markdown("""
+    **v1.5.1 | גרסת היישור לימין 📐**
+    * תוקן באג תצוגה: יישור לימין של רשימות בהחלפה משולשת (בלי אצבעות הפוכות).
+
+    **v1.5 | גרסת ה-Tap Only 👆**
+    * חיסלנו את המקלדת הקופצת במובייל! מעבר לשימוש ב"קפסולות" (Pills) ולחיצות בלבד במקום תיבות בחירה.
+
+    **v1.4 | חופש תמורת חופש 🏖️**
+    * דילים חכמים לחופש: עכשיו כשמבקשים יום חופש, המערכת דואגת שמאזן המשמרות יישמר ומאפשרת לך לבחור איזה יום לקחת לפרטנר בחזרה.
+    * הוספת "כרית אוויר" בתחתית המסך כדי שהפרסומות של האתר לא יסתירו כפתורים.
+
+    **v1.3 | חלונות קופצים 🧼**
+    * עורך ההודעות עבר לחלון קופץ אלגנטי (Pop-up) שמחשיך את הרקע וחוסך מקום.
+    * תוקנו ניסוחים קטנים ("של" במקום "מאת").
+
+    **v1.2 | גרסת האימפריה 👑**
+    * נוסף "מדד עומס": המערכת מזהה למי יש קצת משמרות ("מטרה קלה") ומי כבר קורס.
+    * רשימת חרם (Blacklist): לסינון אנשים שאין טעם לפנות אליהם.
+    * כפתור חדש: יצירת הודעת דיווח יבשה להנהלה על ההחלפה.
+
+    **v1.1 | גרסת הסרקזם 🍷**
+    * הוספת מספר גרסה, כתיבה שנונה וממורמרת יותר של הודעות הוואטסאפ (טון פילוסופי וסרקסטי).
+    """)
+    if st.button("סגירה", use_container_width=True):
+        st.rerun()
+
+# --- חלון קופץ: עריכת הודעה לפני וואטסאפ ---
 @st.dialog("רגע לפני ששולחים... 💬")
 def edit_and_send_dialog(default_msg):
     st.markdown("כאן אפשר לערוך, להוסיף סמיילי או להכניס עקיצה אישית לפני המעבר לוואטסאפ:")
@@ -167,7 +197,6 @@ def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, per
                         edit_and_send_dialog(default_msg)
                 with col_pop:
                     with st.popover("💡 איך ההחלפה עובדת?", use_container_width=True):
-                        # התיקון: שימוש ברשימה מובנית ונקייה שמתיישרת לימין
                         st.markdown("**השורה התחתונה:**")
                         st.markdown(f"* 👤 **{user_name}:** משמרת {person_a_shift} ב{selected_day}")
                         st.markdown(f"* 👤 **{b_name}:** משמרת {user_shift} ב{selected_day}")
@@ -180,8 +209,15 @@ def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, per
 
 def main():
     st.title("מערכת חילופי משמרות 🔄")
-    st.caption("v1.5.1 | גרסת היישור לימין 📐")
     
+    # סידור הגרסה והכפתור אחד ליד השני
+    col_ver, col_btn = st.columns([2, 1])
+    with col_ver:
+        st.caption("v1.5.2 | נוסף יומן שינויים 📜")
+    with col_btn:
+        if st.button("מה התחדש?", type="tertiary", use_container_width=True):
+            show_changelog()
+            
     st.markdown("ברוכים הבאים למערכת שתנסה למזער את הנזק בסידור העבודה. רק להעלות את הקובץ, ולתת לאלגוריתם לשבור את הראש במקומכם.")
 
     st.info("👇 כאן זורקים את האקסל. המערכת תתעלם אוטומטית מכל הצבעים והקישוטים המיותרים שההנהלה שמה.")
@@ -288,5 +324,76 @@ def main():
                             edit_and_send_dialog(default_msg)
                     with col_hr:
                         with st.popover("👔 דיווח להנהלה", use_container_width=True):
-                            hr_msg = f"היי, מבקש/ת לעדכן על החלפת משמרות ב{selected_day}:\n- {user_name} יע
-                              
+                            hr_msg = f"היי, מבקש/ת לעדכן על החלפת משמרות ב{selected_day}:\n- {user_name} יעשה את משמרת {partner_shift}.\n- {partner} יעשה את משמרת {current_shift}."
+                            st.markdown("להעתיק ולהדביק למנהל/ת:")
+                            st.code(hr_msg, language="text")
+                    
+                    with st.expander(f"🔀 סירוב מ-{partner}? ננסה דיל משולש"):
+                        find_triangular_swap(user_name, current_shift, selected_day, partner, partner_shift, df, blacklist)
+
+    # --- חיפוש חופש חכם (חופש תמורת חופש) ---
+    if "חופש 🌴" in desired_shifts:
+        free_that_day = df[(df[selected_day] == 'חופש 🌴') & (df['שם'] != user_name) & (~df['שם'].isin(blacklist))]
+        complex_swaps = []
+        for _, partner in free_that_day.iterrows():
+            partner_name = partner['שם']
+            
+            if not check_legal_rest(partner_name, current_shift, selected_day, df):
+                continue
+                
+            partner_shifts = partner.to_dict()
+            valid_return_shifts = []
+            
+            for day, p_shift in partner_shifts.items():
+                if day in ['שם', selected_day]: continue 
+                if day in df.columns:
+                    my_status_that_day = df[df['שם'] == user_name][day].values[0]
+                    if my_status_that_day == 'חופש 🌴' and p_shift != 'חופש 🌴':
+                        if check_legal_rest(user_name, p_shift, day, df):
+                            valid_return_shifts.append((day, p_shift))
+
+            if valid_return_shifts:
+                complex_swaps.append({
+                    'partner': partner_name,
+                    'options': valid_return_shifts
+                })
+
+        if complex_swaps:
+            found_solution = True
+            st.markdown(f"#### 🌴 דילים חכמים להשגת יום חופש ב{selected_day}:")
+            st.caption("*(החלפה מאוזנת: אתה נותן משמרת, ולוקח משמרת ביום אחר במקומה)*")
+            
+            for swap in complex_swaps:
+                partner_name = swap['partner']
+                options = swap['options']
+                workload_text = get_workload_text(partner_name, df)
+                
+                with st.container(border=True):
+                    st.markdown(f"### 🌴 {partner_name}")
+                    st.caption(f"חופש ב{selected_day} | {workload_text}")
+                    
+                    options_formatted = [f"לקחת לו את ה{s} ב{d}" for d, s in options]
+                    selected_option_idx = st.radio("איזו משמרת תיקח במקום?", range(len(options_formatted)), format_func=lambda x: options_formatted[x], key=f"sel_shift_{partner_name}_{selected_day}", horizontal=True)
+                    
+                    selected_tone = st.radio("באיזו גישה נתקוף?", tone_options, key=f"tone_comp_{partner_name}_{selected_day}", horizontal=True)
+                    
+                    partner_day, partner_shift = options[selected_option_idx]
+                    
+                    default_msg = generate_freedom_swap_msg(selected_tone, current_shift, selected_day, partner_shift, partner_day, partner_name)
+                    
+                    col_btn, col_hr = st.columns(2)
+                    with col_btn:
+                        if st.button("שליחה בוואטסאפ 💬", use_container_width=True, key=f"btn_send_comp_{partner_name}_{selected_day}"):
+                            edit_and_send_dialog(default_msg)
+                    with col_hr:
+                        with st.popover("👔 דיווח להנהלה", use_container_width=True):
+                            hr_msg = f"היי, מבקש/ת לעדכן על החלפת משמרות להזזת יום חופש:\n- {user_name} יעשה את משמרת {partner_shift} ב{partner_day}.\n- {partner_name} יעשה את משמרת {current_shift} ב{selected_day}."
+                            st.markdown("להעתיק ולהדביק למנהל/ת:")
+                            st.code(hr_msg, language="text")
+
+    if not found_solution:
+        st.error("האלגוריתם ירק דם אבל אין אף פראייר פנוי השבוע (או שזה נופל להם על שעות מנוחה). קח נשימה עמוקה ולך להכין קפה שחור. ☕💀")
+
+if __name__ == "__main__":
+    main()
+    
