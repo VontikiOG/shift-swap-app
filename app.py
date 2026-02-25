@@ -16,8 +16,6 @@ st.set_page_config(page_title="בורח ממשמרות - גרסת ה-VIP", page_
 
 # --- הזרקת CSS ---
 st.markdown("""
-# --- הזרקת CSS ---
-st.markdown("""
 <style>
     /* הופך את כל האפליקציה מימין לשמאל */
     .stApp {
@@ -52,7 +50,6 @@ st.markdown("""
         }
     }
 </style>
-""", unsafe_allow_html=True)
 """, unsafe_allow_html=True)
 
 def clean_dataframe(df):
@@ -221,4 +218,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
