@@ -17,13 +17,65 @@ st.set_page_config(page_title="בורח ממשמרות - גרסת ה-VIP", page_
 # --- הזרקת CSS ---
 st.markdown("""
 <style>
-    .stApp { direction: rtl; }
-    p, div, h1, h2, h3, h4, h5, h6, label, span { text-align: right !important; }
-    .stSelectbox div[data-baseweb="select"] { text-align: right; }
-    [data-testid="stDataFrame"] { direction: rtl; }
+    /* הופך את כל האפליקציה מימין לשמאל */
+    .stApp {
+        direction: rtl;
+        background-color: #0b0c10; /* שחור-אפור אפלולי */
+        color: #66fcf1; /* תכלת ניאון לטקסט רגיל */
+    }
+    
+    /* מיישר את כל הטקסטים לימין */
+    p, div, h2, h3, h4, h5, h6, label, span {
+        text-align: right !important;
+        font-family: 'Courier New', Courier, monospace; /* פונט של מכונות כתיבה/האקרים */
+    }
+
+    /* כותרת ראשית זוהרת בוורוד ניאון */
+    h1 {
+        text-align: right !important;
+        color: #ff00ff !important;
+        text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #e60073;
+        font-weight: bold;
+    }
+    
+    /* מתקן את תיבות הבחירה שייראו טוב ויתאימו לעיצוב */
+    .stSelectbox div[data-baseweb="select"] {
+        text-align: right;
+        background-color: #1f2833;
+        color: #66fcf1;
+        border: 1px solid #ff00ff;
+    }
+    
+    /* טיפול בטבלה עצמה שלא תשתגע */
+    [data-testid="stDataFrame"] {
+        direction: rtl;
+    }
+
+    /* כפתורי הוואטסאפ - סטייל סייברפאנק */
+    a[data-testid="baseLinkButton"] {
+        background-color: transparent !important;
+        border: 2px solid #66fcf1 !important;
+        color: #66fcf1 !important;
+        box-shadow: 0 0 5px #66fcf1;
+        transition: 0.3s;
+    }
+    a[data-testid="baseLinkButton"]:hover {
+        background-color: #66fcf1 !important;
+        color: #0b0c10 !important;
+        box-shadow: 0 0 15px #66fcf1, 0 0 25px #66fcf1;
+    }
+
+    /* קסם המובייל: התאמות ספציפיות למסכים קטנים */
     @media (max-width: 768px) {
-        .block-container { padding: 1.5rem 0.5rem 1rem 0.5rem !important; }
-        h1 { font-size: 1.8rem !important; }
+        .block-container {
+            padding-top: 1.5rem !important;
+            padding-bottom: 1rem !important;
+            padding-left: 0.5rem !important;
+            padding-right: 0.5rem !important;
+        }
+        h1 {
+            font-size: 1.8rem !important;
+        }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -194,3 +246,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
