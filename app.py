@@ -72,7 +72,18 @@ def check_legal_rest(person_taking_shift, shift_to_take, day_taking, df):
                 return False 
     return True
 
-# טקסטים קלילים, נטולי מגדר - ויותר סרקסטיים
+def get_workload_text(person_name, df):
+    """בודק כמה משמרות העובד עושה השבוע ופולט טקסט מתאים"""
+    person_data = df[df['שם'] == person_name].iloc[0]
+    shifts_count = sum(1 for col, val in person_data.items() if col != 'שם' and val != 'חופש 🌴')
+    
+    if shifts_count <= 2:
+        return f"🎯 מטרה קלה! (רק {shifts_count} משמרות השבוע)"
+    elif shifts_count >= 5:
+        return f"⚠️ קורס/ת מעומס ({shifts_count} משמרות השבוע)"
+    else:
+        return f"📊 עומס רגיל ({shifts_count} משמרות)"
+
 def generate_whatsapp_msg(tone, my_shift, partner_shift, day, partner_name):
     if tone == "נואש":
         return f"היי {partner_name}, אני קורס פה. עבר עליי לילה לבן ואין לי מושג איך אני שורד את זה. יש מצב לקחת את ה{my_shift} שלי ב{day} ואני אקח את ה{partner_shift} במקום? מבטיח להחזיר בגדול, תציל אותי."
@@ -88,9 +99,9 @@ def generate_whatsapp_msg(tone, my_shift, partner_shift, day, partner_name):
         return f"היי {partner_name}, האלגוריתם החליט שאנחנו הקורבנות של השבוע. המשמרת שלך היא {partner_shift} ושלי {my_shift} ב{day}. בואו נתחלף כדי שאני לא אאבד צלם אנוש מול הבוס. זורם?"
     return ""
 
-def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, person_a_shift, df):
-    """מנוע ההחלפה המשולשת 🔀"""
-    person_bs = df[(df[selected_day] == 'חופש 🌴') & (df['שם'] != user_name) & (df['שם'] != person_a_name)]
+def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, person_a_shift, df, blacklist):
+    """מנוע ההחלפה המשולשת 🔀 (כולל סינון של רשימת החרם)"""
+    person_bs = df[(df[selected_day] == 'חופש 🌴') & (df['שם'] != user_name) & (df['שם'] != person_a_name) & (~df['שם'].isin(blacklist))]
     
     valid_bs = []
     for _, row in person_bs.iterrows():
@@ -117,31 +128,35 @@ def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, per
     
     for b_name, shifts in valid_bs:
         for d, s in shifts.items():
+            workload_b = get_workload_text(b_name, df)
             with st.container(border=True):
-                st.markdown(f"ההצעה ל{person_a_name}: משמרת **{s}** ב{d} (במקום {b_name})")
+                st.markdown(f"ההצעה ל{person_a_name}: משמרת **{s}** ב{d} (מאת {b_name})")
+                st.caption(f"על המושיע/ה: {workload_b}")
                 
-                explanation_text = f"הנה הקומבינה: המשמרת שיש לך ב{selected_day} ({person_a_shift}) עוברת אליי. בתמורה, המשמרת של {b_name} ב{d} ({s}) תהיה שלך, ו-{b_name} ייקח את ה{user_shift} במקומי. כל הצדדים מנצחים!"
+                explanation_text = f"הנה הקומבינה: המשמרת שיש לך ב{selected_day} {person_a_shift} עוברת אליי. בתמורה, המשמרת של {b_name} ב{d} {s} תהיה שלך, ו-{b_name} ייקח את ה{user_shift} במקומי. כל הצדדים מנצחים!"
+                default_msg = f"היי {person_a_name}. למרות הסירוב הקודם על משמרת ה{user_shift}, אלגוריתם ההחלפות פתר לנו את זה עם דיל משולש! {explanation_text} איך זה נשמע? תציל אותי."
                 
-                msg = f"היי {person_a_name}. למרות הסירוב הקודם על משמרת ה{user_shift}, אלגוריתם ההחלפות פתר לנו את זה עם דיל משולש! {explanation_text} איך זה נשמע? תציל אותי."
-                url = f"https://wa.me/?text={urllib.parse.quote(msg)}"
+                # עורך הודעות בלייב
+                edited_msg = st.text_area("עריכת הודעה לסרבן:", value=default_msg, height=100, key=f"edit_tri_{person_a_name}_{b_name}_{d}")
+                url = f"https://wa.me/?text={urllib.parse.quote(edited_msg)}"
                 
-                col_btn, col_pop = st.columns(2)
+                col_btn, col_pop, col_hr = st.columns([1,1,1])
                 with col_btn:
-                    st.link_button(f"שליחת הצעת משולש ל-{person_a_name} 💬", url, use_container_width=True)
+                    st.link_button("שליחה בוואטסאפ 💬", url, use_container_width=True)
                 with col_pop:
                     with st.popover("💡 איך ההחלפה עובדת?", use_container_width=True):
-                        st.markdown("**ההסבר שיישלח בוואטסאפ:**")
-                        st.info(explanation_text)
-                        st.divider()
-                        st.markdown("**השורה התחתונה:**")
                         st.write(f"👈 **{user_name}:** משמרת {person_a_shift} ב{selected_day}")
                         st.write(f"👈 **{b_name}:** משמרת {user_shift} ב{selected_day}")
                         st.write(f"👈 **{person_a_name}:** משמרת {s} ב{d}")
+                with col_hr:
+                    with st.popover("👔 דיווח להנהלה", use_container_width=True):
+                        hr_msg = f"היי, מבקש/ת לעדכן על החלפת משמרות משולשת:\n- {user_name} יעשה את משמרת {person_a_shift} ב{selected_day} (במקום {person_a_name}).\n- {b_name} יעשה את משמרת {user_shift} ב{selected_day} (במקום {user_name}).\n- {person_a_name} יעשה את משמרת {s} ב{d} (במקום {b_name}).\n\nתודה מראש!"
+                        st.markdown("להעתיק ולהדביק למנהל/ת:")
+                        st.code(hr_msg, language="text")
 
 def main():
     st.title("מערכת חילופי משמרות 🔄")
-    # התוספת של הגרסה מתחת לכותרת:
-    st.caption("v1.1 | גרסת הסרקזם 🍷")
+    st.caption("v1.2 | גרסת האימפריה 👑")
     
     st.markdown("ברוכים הבאים למערכת שתנסה למזער את הנזק בסידור העבודה. רק להעלות את הקובץ, ולתת לאלגוריתם לשבור את הראש במקומכם.")
 
@@ -192,8 +207,10 @@ def main():
     current_shift = my_active_shifts[selected_day]
     st.warning(f"גזר הדין הנוכחי: משמרת **{current_shift}** ב{selected_day}.")
     
+    # אזור הסינון - רשימת החרם!
+    blacklist = st.multiselect("רשימת החרם 🚫 (את מי לסנן מהתוצאות?):", [w for w in workers_list if w != user_name])
+
     all_possible_shifts = ["בוקר ☀️", "בוקר ארוך 🌤️", "ערב 🌇", "לילה ארוך 🦉", "לילה 🌙", "חופש 🌴"]
-    
     desired_shifts = st.multiselect("לאיזו משמרת היית מעדיף לברוח? (אפשר לבחור כמה)", all_possible_shifts)
 
     if not desired_shifts:
@@ -212,7 +229,8 @@ def main():
     regular_shifts_wanted = [s for s in desired_shifts if s != "חופש 🌴"]
     
     if regular_shifts_wanted:
-        potential_swaps = df[(df[selected_day].isin(regular_shifts_wanted)) & (df['שם'] != user_name)]
+        # סינון הרשימה השחורה מתבצע כאן
+        potential_swaps = df[(df[selected_day].isin(regular_shifts_wanted)) & (df['שם'] != user_name) & (~df['שם'].isin(blacklist))]
         
         if not potential_swaps.empty:
             st.markdown(f"#### 🔄 פראיירים פוטנציאליים מאותו היום:")
@@ -224,25 +242,36 @@ def main():
                     continue 
                 
                 found_solution = True
+                workload_text = get_workload_text(partner, df)
+                
                 with st.container(border=True):
-                    col_info, col_tone, col_btn = st.columns([1.5, 2, 1])
+                    col_info, col_tone = st.columns([1.5, 2])
                     with col_info:
                         st.markdown(f"### 👤 {partner}")
-                        st.caption(f"תקוע/ה במשמרת {partner_shift}")
+                        st.caption(f"במשמרת {partner_shift} | {workload_text}")
                     with col_tone:
                         selected_tone = st.selectbox("באיזו גישה נתקוף?", tone_options, key=f"tone_{partner}_{selected_day}")
+                    
+                    # עורך הלייב!
+                    default_msg = generate_whatsapp_msg(selected_tone, current_shift, partner_shift, selected_day, partner)
+                    edited_msg = st.text_area("עריכת ההודעה לפני שליחה:", value=default_msg, height=100, key=f"edit_{partner}_{selected_day}")
+                    url = f"https://wa.me/?text={urllib.parse.quote(edited_msg)}"
+                    
+                    col_btn, col_hr = st.columns(2)
                     with col_btn:
-                        st.write("") 
-                        msg = generate_whatsapp_msg(selected_tone, current_shift, partner_shift, selected_day, partner)
-                        url = f"https://wa.me/?text={urllib.parse.quote(msg)}"
-                        st.link_button("לשלוח בוואטסאפ 💬", url, use_container_width=True)
+                        st.link_button("שליחה בוואטסאפ 💬", url, use_container_width=True)
+                    with col_hr:
+                        with st.popover("👔 דיווח להנהלה", use_container_width=True):
+                            hr_msg = f"היי, מבקש/ת לעדכן על החלפת משמרות ב{selected_day}:\n- {user_name} יעשה את משמרת {partner_shift}.\n- {partner} יעשה את משמרת {current_shift}."
+                            st.markdown("להעתיק ולהדביק למנהל/ת:")
+                            st.code(hr_msg, language="text")
                     
                     with st.expander(f"🔀 סירוב מ-{partner}? ננסה דיל משולש"):
-                        find_triangular_swap(user_name, current_shift, selected_day, partner, partner_shift, df)
+                        find_triangular_swap(user_name, current_shift, selected_day, partner, partner_shift, df, blacklist)
 
     # --- חיפוש חופש ---
     if "חופש 🌴" in desired_shifts:
-        free_that_day = df[(df[selected_day] == 'חופש 🌴') & (df['שם'] != user_name)]
+        free_that_day = df[(df[selected_day] == 'חופש 🌴') & (df['שם'] != user_name) & (~df['שם'].isin(blacklist))]
         complex_swaps = []
         for _, partner in free_that_day.iterrows():
             partner_name = partner['שם']
@@ -266,20 +295,30 @@ def main():
                 partner_name = swap[0]
                 swap_day = swap[1]
                 partner_shift = swap[2]
+                workload_text = get_workload_text(partner_name, df)
                 
                 with st.container(border=True):
-                    col_info, col_tone, col_btn = st.columns([1.5, 2, 1])
+                    col_info, col_tone = st.columns([1.5, 2])
                     with col_info:
                         st.markdown(f"### 🌴 {partner_name}")
-                        st.caption(f"כרגע בחופש ב{selected_day} | מתכנן/ת לעבוד ב{swap_day} ({partner_shift})")
+                        st.caption(f"חופש ב{selected_day} | משמרת ב{swap_day} ({partner_shift}) | {workload_text}")
                     with col_tone:
                         selected_tone = st.selectbox("באיזו גישה נתקוף?", tone_options, key=f"tone_{partner_name}_{swap_day}_complex")
+                    
+                    # עורך הלייב!
+                    default_msg = generate_whatsapp_msg(selected_tone, current_shift, partner_shift, selected_day, partner_name)
+                    default_msg += f" עם הבטחה להחזיר משמרת ב{swap_day}."
+                    edited_msg = st.text_area("עריכת ההודעה לפני שליחה:", value=default_msg, height=100, key=f"edit_comp_{partner_name}_{swap_day}")
+                    url = f"https://wa.me/?text={urllib.parse.quote(edited_msg)}"
+                    
+                    col_btn, col_hr = st.columns(2)
                     with col_btn:
-                        st.write("")
-                        msg = generate_whatsapp_msg(selected_tone, current_shift, partner_shift, selected_day, partner_name)
-                        msg += f" עם הבטחה להחזיר משמרת ב{swap_day}."
-                        url = f"https://wa.me/?text={urllib.parse.quote(msg)}"
-                        st.link_button("לשלוח בוואטסאפ 💬", url, use_container_width=True)
+                        st.link_button("שליחה בוואטסאפ 💬", url, use_container_width=True)
+                    with col_hr:
+                        with st.popover("👔 דיווח להנהלה", use_container_width=True):
+                            hr_msg = f"היי, מבקש/ת לעדכן על החלפת משמרות מפוצלת:\n- {user_name} יעשה את משמרת {partner_shift} ב{swap_day}.\n- {partner_name} יעשה את משמרת {current_shift} ב{selected_day}."
+                            st.markdown("להעתיק ולהדביק למנהל/ת:")
+                            st.code(hr_msg, language="text")
 
     if not found_solution:
         st.error("האלגוריתם ירק דם אבל אין אף פראייר פנוי השבוע (או שזה נופל להם על שעות מנוחה). קח נשימה עמוקה ולך להכין קפה שחור. ☕💀")
