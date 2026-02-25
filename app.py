@@ -104,7 +104,7 @@ def main():
     uploaded_file = st.file_uploader("", type=['csv', 'xlsx'])
     
     # הוספנו טריק חדש: בחירת מספר שורות לדילוג!
-    rows_to_skip = st.number_input("כמה שורות כותרת מיותרות יש למעלה שצריך לדלג עליהן?", min_value=0, max_value=15, value=2)
+    rows_to_skip = st.number_input("כמה שורות כותרת מיותרות יש למעלה שצריך לדלג עליהן? - תשאיר 2 כברירת מחדל", min_value=0, max_value=15, value=2)
     
     if uploaded_file is None:
         st.stop()
@@ -217,6 +217,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
