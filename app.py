@@ -44,6 +44,9 @@ def clean_dataframe(df):
     """
     df.columns = df.columns.astype(str).str.strip()
     
+    # משמידים עמודות מיותרות של משאבי אנוש בלי לשאול שאלות
+    df = df.drop(columns=['אחוז משרה'], errors='ignore')
+    
     # מילון תרגום: משעות (עם ובלי אפס בהתחלה) לשמות המשמרות שלנו
     HOURS_TO_NAMES = {
         "07:00-15:00": "בוקר",
@@ -56,6 +59,25 @@ def clean_dataframe(df):
         "22:30-07:00": "לילה",
         "22:30-7:00": "לילה"
     }
+    
+    for col in df.columns:
+        # הופך לטקסט ומוחק ירידות שורה סמויות
+        df[col] = df[col].astype(str).replace(r'\r|\n', '', regex=True).str.strip()
+        
+        # מתרגמים את השעות למילים נורמליות (רק בעמודות של הימים, לא בשמות העובדים)
+        if col != 'שם':
+            # מוחקים רווחים מיותרים ליד המקף
+            df[col] = df[col].str.replace(' ', '', regex=False)
+            
+            # עוברים על המילון ומחליפים
+            for hours, name in HOURS_TO_NAMES.items():
+                df[col] = df[col].replace(hours, name)
+                
+    # מטפלים בתאים הריקים והופכים אותם לחופש
+    df = df.replace(["nan", "None", "", "NaN"], "חופש")
+    df = df.fillna("חופש")
+    
+    return df
     
     for col in df.columns:
         # הופך לטקסט ומוחק ירידות שורה סמויות
@@ -193,6 +215,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
