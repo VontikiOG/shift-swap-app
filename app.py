@@ -93,7 +93,6 @@ def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, per
     מנוע ההחלפה המשולשת 🔀
     מחפש את 'צלע ב' (המושיע) שייקח את המשמרת שלך, וייתן משהו ל'צלע א' (הסרבן)
     """
-    # 1. מוצאים את כל מי שפנוי ביום הזה (ויכול חוקית לקחת את המשמרת שלך)
     person_bs = df[(df[selected_day] == 'חופש 🌴') & (df['שם'] != user_name) & (df['שם'] != person_a_name)]
     
     valid_bs = []
@@ -101,20 +100,24 @@ def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, per
         b_name = row['שם']
         if check_legal_rest(b_name, user_shift, selected_day, df):
             
-            # 2. איזה משמרות יש ל-B להציע ל-A בשאר השבוע?
             b_shifts = row.to_dict()
             offerable_shifts = {}
             for d, s in b_shifts.items():
                 if d not in ['שם', selected_day] and s != 'חופש 🌴':
-                    # 3. בדיקת חוקיות פסיכית: האם A יכול חוקית לקחת את המשמרת של B ביום הזה?
-                    if check_legal_rest(person_a_name, s, d, df):
-                        offerable_shifts[d] = s
+                    
+                    # התיקון הקריטי: האם הסרבן (צלע א') בכלל פנוי ביום הזה כדי לקבל משמרת?
+                    a_status_that_day = df[df['שם'] == person_a_name][d].values[0]
+                    if a_status_that_day == 'חופש 🌴':
+                        
+                        # ואם הוא פנוי, האם זה גם חוקי מבחינת לילה-בוקר?
+                        if check_legal_rest(person_a_name, s, d, df):
+                            offerable_shifts[d] = s
             
             if offerable_shifts:
                 valid_bs.append((b_name, offerable_shifts))
                 
     if not valid_bs:
-        st.error("האלגוריתם לא מצא אף 'מושיע' (צלע שלישית) שפנוי לקחת את המשמרת שלך ולהציע משהו חוקי בתמורה.")
+        st.error("האלגוריתם לא מצא אף 'מושיע' שפנוי לקחת את המשמרת שלך ולהציע משהו ריאלי וחוקי בתמורה לסרבן.")
         return
         
     st.markdown("##### 🦸‍♂️ רשימת המושיעים (הדיל המשולש):")
@@ -122,9 +125,9 @@ def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, per
     
     for b_name, shifts in valid_bs:
         shifts_text = " | ".join([f"{d} ({s})" for d, s in shifts.items()])
-        st.info(f"**{b_name}** פנוי/ה. יכול להציע את: {shifts_text}")
+        st.info(f"**{b_name}** פנוי/ה. יכול/ה להציע את: {shifts_text}")
         
-        msg = f"היי {person_a_name}. אני יודע שסירבת לקחת לי את ה{user_shift}, אבל תפרגני לי שנייה: בניתי לנו דיל משולש! {b_name} לוקח ממני את ה{user_shift} שלי. בתמורה, את/ה מביא/ה לי את ה{person_a_shift} שלך ביום {selected_day}, ומקבל/ת מ{b_name} משמרת אחרת לבחירתך: {shifts_text}. מה אומר/ת? מציל/ה אותי!"
+        msg = f"היי {person_a_name}. אני יודע/ת שסירבת לקחת לי את ה{user_shift}, אבל תפרגן/י לי שנייה: בניתי לנו דיל משולש! {b_name} לוקח/ת ממני את ה{user_shift} שלי. בתמורה, את/ה מביא/ה לי את ה{person_a_shift} שלך ביום {selected_day}, ומקבל/ת מ{b_name} משמרת אחרת לבחירתך: {shifts_text}. מה את/ה אומר/ת? תציל/י אותי!"
         url = f"https://wa.me/?text={urllib.parse.quote(msg)}"
         st.link_button(f"שלח הצעת משולש ל-{person_a_name} 💬", url)
 
@@ -224,8 +227,7 @@ def main():
                         url = f"https://wa.me/?text={urllib.parse.quote(msg)}"
                         st.link_button("שלח בוואטסאפ 💬", url, use_container_width=True)
                     
-                    # הכפתור של ההחלפה המשולשת עם האימוג'י החדש 🔀
-                    with st.expander(f"🔀 {partner} סירב לך? חפש דיל משולש"):
+                    with st.expander(f"🔀 {partner} סירב/ה לך? חפש דיל משולש"):
                         find_triangular_swap(user_name, current_shift, selected_day, partner, partner_shift, df)
 
     # --- פיצול הלוגיקה: חיפוש חופש ---
@@ -265,7 +267,7 @@ def main():
                     with col_btn:
                         st.write("")
                         msg = generate_whatsapp_msg(selected_tone, current_shift, partner_shift, selected_day, partner_name)
-                        msg += f" (ואני אחזיר לך ואקח את המשמרת שלך ביום {swap_day})."
+                        msg += f" (ואני אחזיר/תחזיר לך ואקח את המשמרת שלך ביום {swap_day})."
                         url = f"https://wa.me/?text={urllib.parse.quote(msg)}"
                         st.link_button("שלח בוואטסאפ 💬", url, use_container_width=True)
 
