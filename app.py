@@ -19,16 +19,10 @@ st.markdown("""
 <style>
     .stApp { direction: rtl; }
     p, div, h1, h2, h3, h4, h5, h6, label, span { text-align: right !important; }
-    .stSelectbox div[data-baseweb="select"], .stMultiSelect div[data-baseweb="select"] { text-align: right; }
     
-    /* התיקון: ביטלנו את ה-display: none שהרג את הכפתור. העלמנו רק את סמן ההקלדה */
-    div[data-baseweb="select"] input {
-        caret-color: transparent !important;
-    }
-
     /* כרית אוויר ענקית למטה כדי לברוח מהפרסומות של האחסון */
     .block-container { 
-        padding-bottom: 300px !important; 
+        padding-bottom: 350px !important; 
     }
     
     [data-testid="stDataFrame"] { direction: rtl; }
@@ -36,6 +30,8 @@ st.markdown("""
     @media (max-width: 768px) {
         .block-container { padding-top: 1.5rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
         h1 { font-size: 1.8rem !important; }
+        /* עיצוב כפתורי הרדיו במובייל שיהיו נוחים ללחיצה */
+        div.row-widget.stRadio > div { flex-direction: row; flex-wrap: wrap; }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -181,7 +177,7 @@ def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, per
 
 def main():
     st.title("מערכת חילופי משמרות 🔄")
-    st.caption("v1.4.1 | תיקון הכפתורים 🛠️")
+    st.caption("v1.5 | גרסת ה-Tap Only (בלי מקלדות) 👆")
     
     st.markdown("ברוכים הבאים למערכת שתנסה למזער את הנזק בסידור העבודה. רק להעלות את הקובץ, ולתת לאלגוריתם לשבור את הראש במקומכם.")
 
@@ -213,10 +209,12 @@ def main():
 
     workers_list = df['שם'].unique().tolist()
     
-    col1, col2 = st.columns(2)
-    with col1:
-        user_name = st.selectbox("מה שמך?", ["בחר שם..."] + workers_list)
-    if user_name == "בחר שם...": st.stop()
+    # 🌟 ביי ביי Selectbox - שלום ל-Pills!
+    user_name = st.pills("מה שמך? (לחץ לבחירה):", workers_list, selection_mode="single")
+    
+    if not user_name: 
+        st.info("👆 לחץ על השם שלך כדי להתחיל")
+        st.stop()
 
     user_shifts = df[df['שם'] == user_name].iloc[0].to_dict()
     my_active_shifts = {day: shift for day, shift in user_shifts.items() if day != 'שם' and shift != 'חופש 🌴'}
@@ -226,16 +224,26 @@ def main():
         st.success("אין משמרות השבוע! או שפיטרו אותך, או שזכית בלוטו. עוף לים. 🏖️")
         st.stop()
 
-    with col2:
-        selected_day = st.selectbox("מאיזו משמרת בא לך לברוח?", list(my_active_shifts.keys()))
+    st.write("") # מרווח קטן
+    # 🌟 בחירת המשמרת שלך כבועות (Pills)
+    selected_day = st.pills("מאיזו משמרת בא לך לברוח?", list(my_active_shifts.keys()), selection_mode="single")
     
+    if not selected_day:
+        st.stop()
+
     current_shift = my_active_shifts[selected_day]
     st.warning(f"גזר הדין הנוכחי: משמרת **{current_shift}** ב{selected_day}.")
     
-    blacklist = st.multiselect("רשימת החרם 🚫 (את מי לסנן מהתוצאות?):", [w for w in workers_list if w != user_name])
+    with st.expander("🚫 רשימת החרם (לחץ כדי לסנן אנשים)"):
+        # 🌟 רשימת החרם כקפסולות בחירה מרובה
+        blacklist = st.pills("בחר אנשים שלא יופיעו בתוצאות:", [w for w in workers_list if w != user_name], selection_mode="multi")
+        if not blacklist:
+            blacklist = []
 
     all_possible_shifts = ["בוקר ☀️", "בוקר ארוך 🌤️", "ערב 🌇", "לילה ארוך 🦉", "לילה 🌙", "חופש 🌴"]
-    desired_shifts = st.multiselect("לאיזו משמרת היית מעדיף לברוח? (אפשר לבחור כמה)", all_possible_shifts)
+    st.write("")
+    # 🌟 משמרות רצויות כקפסולות בחירה מרובה
+    desired_shifts = st.pills("לאיזו משמרת היית מעדיף לברוח? (אפשר כמה)", all_possible_shifts, selection_mode="multi")
 
     if not desired_shifts:
         st.stop() 
@@ -268,12 +276,11 @@ def main():
                 workload_text = get_workload_text(partner, df)
                 
                 with st.container(border=True):
-                    col_info, col_tone = st.columns([1.5, 2])
-                    with col_info:
-                        st.markdown(f"### 👤 {partner}")
-                        st.caption(f"במשמרת {partner_shift} | {workload_text}")
-                    with col_tone:
-                        selected_tone = st.selectbox("באיזו גישה נתקוף?", tone_options, key=f"tone_{partner}_{selected_day}")
+                    st.markdown(f"### 👤 {partner}")
+                    st.caption(f"במשמרת {partner_shift} | {workload_text}")
+                    
+                    # 🌟 גם הטון שונה לכפתורי רדיו אופקיים כדי למנוע קפיצת מקלדת!
+                    selected_tone = st.radio("באיזו גישה נתקוף?", tone_options, key=f"tone_{partner}_{selected_day}", horizontal=True)
                     
                     default_msg = generate_whatsapp_msg(selected_tone, current_shift, partner_shift, selected_day, partner)
                     
@@ -328,15 +335,14 @@ def main():
                 workload_text = get_workload_text(partner_name, df)
                 
                 with st.container(border=True):
-                    col_info, col_tone = st.columns([1.5, 2])
-                    with col_info:
-                        st.markdown(f"### 🌴 {partner_name}")
-                        st.caption(f"חופש ב{selected_day} | {workload_text}")
+                    st.markdown(f"### 🌴 {partner_name}")
+                    st.caption(f"חופש ב{selected_day} | {workload_text}")
                     
-                    with col_tone:
-                        options_formatted = [f"לקחת לו את ה{s} ב{d}" for d, s in options]
-                        selected_option_idx = st.selectbox("איזו משמרת תיקח במקום?", range(len(options_formatted)), format_func=lambda x: options_formatted[x], key=f"sel_shift_{partner_name}_{selected_day}")
-                        selected_tone = st.selectbox("באיזו גישה נתקוף?", tone_options, key=f"tone_comp_{partner_name}_{selected_day}")
+                    options_formatted = [f"לקחת לו את ה{s} ב{d}" for d, s in options]
+                    # 🌟 כפתורי רדיו לבחירת המשמרת (אפס מקלדת)
+                    selected_option_idx = st.radio("איזו משמרת תיקח במקום?", range(len(options_formatted)), format_func=lambda x: options_formatted[x], key=f"sel_shift_{partner_name}_{selected_day}", horizontal=True)
+                    
+                    selected_tone = st.radio("באיזו גישה נתקוף?", tone_options, key=f"tone_comp_{partner_name}_{selected_day}", horizontal=True)
                     
                     partner_day, partner_shift = options[selected_option_idx]
                     
