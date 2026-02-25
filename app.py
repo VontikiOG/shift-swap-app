@@ -59,7 +59,6 @@ def clean_dataframe(df):
     return df
 
 def check_legal_rest(person_taking_shift, shift_to_take, day_taking, df):
-    """בודק שאין רצף לא חוקי של לילה ואז בוקר"""
     if shift_to_take not in ["לילה 🌙", "לילה ארוך 🦉"]:
         return True 
         
@@ -89,10 +88,7 @@ def generate_whatsapp_msg(tone, my_shift, partner_shift, day, partner_name):
     return ""
 
 def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, person_a_shift, df):
-    """
-    מנוע ההחלפה המשולשת 🔀
-    מחפש את 'צלע ב' (המושיע) שייקח את המשמרת שלך, וייתן משהו ל'צלע א' (הסרבן)
-    """
+    """מנוע ההחלפה המשולשת 🔀"""
     person_bs = df[(df[selected_day] == 'חופש 🌴') & (df['שם'] != user_name) & (df['שם'] != person_a_name)]
     
     valid_bs = []
@@ -104,12 +100,8 @@ def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, per
             offerable_shifts = {}
             for d, s in b_shifts.items():
                 if d not in ['שם', selected_day] and s != 'חופש 🌴':
-                    
-                    # התיקון הקריטי: האם הסרבן (צלע א') בכלל פנוי ביום הזה כדי לקבל משמרת?
                     a_status_that_day = df[df['שם'] == person_a_name][d].values[0]
                     if a_status_that_day == 'חופש 🌴':
-                        
-                        # ואם הוא פנוי, האם זה גם חוקי מבחינת לילה-בוקר?
                         if check_legal_rest(person_a_name, s, d, df):
                             offerable_shifts[d] = s
             
@@ -121,15 +113,33 @@ def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, per
         return
         
     st.markdown("##### 🦸‍♂️ רשימת המושיעים (הדיל המשולש):")
-    st.write("האנשים האלה יכולים לקחת את המשמרת שלך. הנה מה שיש להם להציע לסרבן:")
     
     for b_name, shifts in valid_bs:
-        shifts_text = " | ".join([f"{d} ({s})" for d, s in shifts.items()])
-        st.info(f"**{b_name}** פנוי/ה. יכול/ה להציע את: {shifts_text}")
-        
-        msg = f"היי {person_a_name}. אני יודע/ת שסירבת לקחת לי את ה{user_shift}, אבל תפרגן/י לי שנייה: בניתי לנו דיל משולש! {b_name} לוקח/ת ממני את ה{user_shift} שלי. בתמורה, את/ה מביא/ה לי את ה{person_a_shift} שלך ביום {selected_day}, ומקבל/ת מ{b_name} משמרת אחרת לבחירתך: {shifts_text}. מה את/ה אומר/ת? תציל/י אותי!"
-        url = f"https://wa.me/?text={urllib.parse.quote(msg)}"
-        st.link_button(f"שלח הצעת משולש ל-{person_a_name} 💬", url)
+        for d, s in shifts.items():
+            with st.container(border=True):
+                st.markdown(f"**{b_name}** מציע/ה ל{person_a_name} את משמרת **{s}** ביום **{d}**")
+                
+                # יצירת טקסט ההסבר
+                explanation_text = f"{person_a_name}, קבל/י את הקומבינה: את/ה תעבוד/י ב{d} ({s}) במקום {b_name}. {b_name} יעבוד במקומך ב{selected_day} ({person_a_shift}), ואז אני והוא מתחלפים – ככה שהוא יעשה את ה{user_shift} שלי, ואני ארוויח את ה{person_a_shift}. כולם מסודרים!"
+                
+                # ההודעה שתישלח בוואטסאפ
+                msg = f"היי {person_a_name}. אני יודע שסירבת לקחת לי את ה{user_shift}, אבל תפרגן/י לי שנייה: {explanation_text} מה את/ה אומר/ת? תציל/י אותי!"
+                url = f"https://wa.me/?text={urllib.parse.quote(msg)}"
+                
+                # סידור הכפתורים בשורה
+                col_btn, col_pop = st.columns(2)
+                with col_btn:
+                    st.link_button(f"שלח הצעת משולש ל-{person_a_name} 💬", url, use_container_width=True)
+                with col_pop:
+                    # הבועה הקופצת עם ההסבר
+                    with st.popover("💡 איך ההחלפה עובדת?", use_container_width=True):
+                        st.markdown("**ההסבר שיישלח בוואטסאפ:**")
+                        st.info(explanation_text)
+                        st.divider()
+                        st.markdown("**השורה התחתונה:**")
+                        st.write(f"👈 **אתה:** תעבוד/י ב{person_a_shift} (ביום {selected_day})")
+                        st.write(f"👈 **{b_name}:** יעבוד/תעבוד ב{user_shift} (ביום {selected_day})")
+                        st.write(f"👈 **{person_a_name}:** יעבוד/תעבוד ב{s} (ביום {d})")
 
 def main():
     st.title("מערכת חילופי משמרות 🔄")
