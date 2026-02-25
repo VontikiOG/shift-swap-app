@@ -13,7 +13,7 @@ SHIFT_TYPES = {
 
 st.set_page_config(page_title="בורח ממשמרות - גרסת ה-VIP", page_icon="🏃‍♂️", layout="centered")
 
-# --- הזרקת CSS כדי להפוך את האתר לימין-לשמאל (RTL) ---
+# --- הזרקת CSS כדי להפוך את האתר לימין-לשמאל (RTL) ולהתאים למובייל ---
 st.markdown("""
 <style>
     /* הופך את כל האפליקציה מימין לשמאל */
@@ -34,6 +34,21 @@ st.markdown("""
     /* טיפול בטבלה עצמה שלא תשתגע */
     [data-testid="stDataFrame"] {
         direction: rtl;
+    }
+
+    /* קסם המובייל: התאמות ספציפיות למסכים קטנים */
+    @media (max-width: 768px) {
+        /* מקטין את השוליים הלבנים המיותרים בצדדים ולמעלה */
+        .block-container {
+            padding-top: 1.5rem !important;
+            padding-bottom: 1rem !important;
+            padding-left: 0.5rem !important;
+            padding-right: 0.5rem !important;
+        }
+        /* מקטין טיפה את הכותרת הראשית שלא תתפוס את כל המסך */
+        h1 {
+            font-size: 1.8rem !important;
+        }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -217,6 +232,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
