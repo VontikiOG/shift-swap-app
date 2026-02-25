@@ -41,27 +41,26 @@ st.markdown("""
 @st.dialog("📜 יומן שינויים (Changelog)")
 def show_changelog():
     st.markdown("""
-    **v1.5.1 | גרסת היישור לימין 📐**
-    * תוקן באג תצוגה: יישור לימין של רשימות בהחלפה משולשת (בלי אצבעות הפוכות).
+    **v1.6 | ההסבר המשולש 🔺**
+    * שכתוב מלא של הסבר ההחלפה המשולשת בוואטסאפ לשיטת "תן וקח".
+    * עיצוב מחדש של חלונית ההסבר: יישור מושלם לימין באמצעות HTML, ומשפט שרשרת שמסביר הכל בפשטות.
+
+    **v1.5.1 + v1.5.2 | יישור לימין ויומן שינויים 📐**
+    * הוספת כפתור ה-Changelog.
+    * תוקן באג תצוגה: יישור לימין של רשימות.
 
     **v1.5 | גרסת ה-Tap Only 👆**
-    * חיסלנו את המקלדת הקופצת במובייל! מעבר לשימוש ב"קפסולות" (Pills) ולחיצות בלבד במקום תיבות בחירה.
+    * חיסלנו את המקלדת הקופצת במובייל! מעבר לשימוש ב"קפסולות" (Pills) ולחיצות בלבד.
 
     **v1.4 | חופש תמורת חופש 🏖️**
-    * דילים חכמים לחופש: עכשיו כשמבקשים יום חופש, המערכת דואגת שמאזן המשמרות יישמר ומאפשרת לך לבחור איזה יום לקחת לפרטנר בחזרה.
-    * הוספת "כרית אוויר" בתחתית המסך כדי שהפרסומות של האתר לא יסתירו כפתורים.
+    * דילים חכמים לחופש: שומרים על מאזן המשמרות מול קולגות.
+    * הוספת "כרית אוויר" בתחתית המסך.
 
     **v1.3 | חלונות קופצים 🧼**
-    * עורך ההודעות עבר לחלון קופץ אלגנטי (Pop-up) שמחשיך את הרקע וחוסך מקום.
-    * תוקנו ניסוחים קטנים ("של" במקום "מאת").
+    * עורך ההודעות עבר לחלון קופץ אלגנטי (Pop-up).
 
     **v1.2 | גרסת האימפריה 👑**
-    * נוסף "מדד עומס": המערכת מזהה למי יש קצת משמרות ("מטרה קלה") ומי כבר קורס.
-    * רשימת חרם (Blacklist): לסינון אנשים שאין טעם לפנות אליהם.
-    * כפתור חדש: יצירת הודעת דיווח יבשה להנהלה על ההחלפה.
-
-    **v1.1 | גרסת הסרקזם 🍷**
-    * הוספת מספר גרסה, כתיבה שנונה וממורמרת יותר של הודעות הוואטסאפ (טון פילוסופי וסרקסטי).
+    * מדד עומס, רשימת חרם (Blacklist), ודיווח יבש להנהלה.
     """)
     if st.button("סגירה", use_container_width=True):
         st.rerun()
@@ -188,8 +187,9 @@ def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, per
                 st.markdown(f"ההצעה ל{person_a_name}: משמרת **{s}** ב{d} (של {b_name})")
                 st.caption(f"על המושיע/ה: {workload_b}")
                 
-                explanation_text = f"הנה הקומבינה: המשמרת שיש לך ב{selected_day} {person_a_shift} עוברת אליי. בתמורה, המשמרת של {b_name} ב{d} {s} תהיה שלך, ו-{b_name} ייקח את ה{user_shift} במקומי. כל הצדדים מנצחים!"
-                default_msg = f"היי {person_a_name}. למרות הסירוב הקודם על משמרת ה{user_shift}, אלגוריתם ההחלפות פתר לנו את זה עם דיל משולש! {explanation_text} איך זה נשמע? תציל אותי."
+                # הניסוח החדש בוואטסאפ: תן וקח נקי
+                explanation_text = f"הנה ההצעה: אתה נותן לי את משמרת {person_a_shift} ב{selected_day}, ומקבל במקומה את משמרת {s} ב{d} של {b_name}. {b_name} סוגר לי את הפינה ולוקח את המשמרת שלי ({user_shift} ב{selected_day}), וככה כולם מסודרים!"
+                default_msg = f"היי {person_a_name}. פתרתי לנו את הבעיה עם דיל משולש! {explanation_text} איך זה נשמע? תציל אותי."
                 
                 col_btn, col_pop, col_hr = st.columns([1,1,1])
                 with col_btn:
@@ -197,10 +197,19 @@ def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, per
                         edit_and_send_dialog(default_msg)
                 with col_pop:
                     with st.popover("💡 איך ההחלפה עובדת?", use_container_width=True):
-                        st.markdown("**השורה התחתונה:**")
-                        st.markdown(f"* 👤 **{user_name}:** משמרת {person_a_shift} ב{selected_day}")
-                        st.markdown(f"* 👤 **{b_name}:** משמרת {user_shift} ב{selected_day}")
-                        st.markdown(f"* 👤 **{person_a_name}:** משמרת {s} ב{d}")
+                        # הזרקת HTML ישירה ליישור מוחלט לימין ולשרשרת ההסבר המדויקת
+                        html_explanation = f"""
+                        <div dir="rtl" style="text-align: right; font-family: sans-serif; line-height: 1.6;">
+                            <b>השורה התחתונה - מי עובד מתי?</b><br><br>
+                            🟢 <b>אתה:</b> משמרת {person_a_shift} ב{selected_day} <i>(קיבלת מ{person_a_name})</i><br>
+                            🔵 <b>{person_a_name}:</b> משמרת {s} ב{d} <i>(קיבל מ{b_name})</i><br>
+                            🟡 <b>{b_name}:</b> משמרת {user_shift} ב{selected_day} <i>(קיבל ממך)</i><br><br>
+                            🔄 <b>הסבר השרשרת:</b><br>
+                            <b>{person_a_name}</b> יעבוד במשמרת של <b>{b_name}</b> ({s} ב{d}), שעכשיו <b>{b_name}</b> יעבוד במקום <b>{person_a_name}</b> במשמרת שלו ({person_a_shift} ב{selected_day}), ואז הוא יתחלף איתי במשמרת שלי ({user_shift} ב{selected_day}).
+                        </div>
+                        """
+                        st.markdown(html_explanation, unsafe_allow_html=True)
+                        
                 with col_hr:
                     with st.popover("👔 דיווח להנהלה", use_container_width=True):
                         hr_msg = f"היי, מבקש/ת לעדכן על החלפת משמרות משולשת:\n- {user_name} יעשה את משמרת {person_a_shift} ב{selected_day} (במקום {person_a_name}).\n- {b_name} יעשה את משמרת {user_shift} ב{selected_day} (במקום {user_name}).\n- {person_a_name} יעשה את משמרת {s} ב{d} (במקום {b_name}).\n\nתודה מראש!"
@@ -210,10 +219,9 @@ def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, per
 def main():
     st.title("מערכת חילופי משמרות 🔄")
     
-    # סידור הגרסה והכפתור אחד ליד השני
     col_ver, col_btn = st.columns([2, 1])
     with col_ver:
-        st.caption("v1.5.2 | נוסף יומן שינויים 📜")
+        st.caption("v1.6 | ההסבר המשולש 🔺")
     with col_btn:
         if st.button("מה התחדש?", type="tertiary", use_container_width=True):
             show_changelog()
@@ -396,4 +404,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
