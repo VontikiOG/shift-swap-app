@@ -16,53 +16,27 @@ st.set_page_config(page_title="בורח ממשמרות - גרסת ה-VIP", page_
 
 # --- הזרקת CSS ---
 st.markdown("""
+# --- הזרקת CSS ---
+st.markdown("""
 <style>
     /* הופך את כל האפליקציה מימין לשמאל */
     .stApp {
         direction: rtl;
-        background-color: #0b0c10; /* שחור-אפור אפלולי */
-        color: #66fcf1; /* תכלת ניאון לטקסט רגיל */
     }
     
     /* מיישר את כל הטקסטים לימין */
-    p, div, h2, h3, h4, h5, h6, label, span {
+    p, div, h1, h2, h3, h4, h5, h6, label, span {
         text-align: right !important;
-        font-family: 'Courier New', Courier, monospace; /* פונט של מכונות כתיבה/האקרים */
-    }
-
-    /* כותרת ראשית זוהרת בוורוד ניאון */
-    h1 {
-        text-align: right !important;
-        color: #ff00ff !important;
-        text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #e60073;
-        font-weight: bold;
     }
     
-    /* מתקן את תיבות הבחירה שייראו טוב ויתאימו לעיצוב */
+    /* מתקן את תיבות הבחירה (Selectbox) שייראו טוב בעברית */
     .stSelectbox div[data-baseweb="select"] {
         text-align: right;
-        background-color: #1f2833;
-        color: #66fcf1;
-        border: 1px solid #ff00ff;
     }
     
     /* טיפול בטבלה עצמה שלא תשתגע */
     [data-testid="stDataFrame"] {
         direction: rtl;
-    }
-
-    /* כפתורי הוואטסאפ - סטייל סייברפאנק */
-    a[data-testid="baseLinkButton"] {
-        background-color: transparent !important;
-        border: 2px solid #66fcf1 !important;
-        color: #66fcf1 !important;
-        box-shadow: 0 0 5px #66fcf1;
-        transition: 0.3s;
-    }
-    a[data-testid="baseLinkButton"]:hover {
-        background-color: #66fcf1 !important;
-        color: #0b0c10 !important;
-        box-shadow: 0 0 15px #66fcf1, 0 0 25px #66fcf1;
     }
 
     /* קסם המובייל: התאמות ספציפיות למסכים קטנים */
@@ -78,6 +52,7 @@ st.markdown("""
         }
     }
 </style>
+""", unsafe_allow_html=True)
 """, unsafe_allow_html=True)
 
 def clean_dataframe(df):
