@@ -2,14 +2,14 @@ import streamlit as st
 import pandas as pd
 import urllib.parse
 
-# הגדרת שעות המשמרות
+# הגדרת שעות המשמרות (עכשיו עם אימוג'ים מובנים!)
 SHIFT_TYPES = {
-    "בוקר": "07:00-15:00",
-    "בוקר ארוך": "07:00-19:00",
-    "ערב": "14:30-23:00",
-    "לילה ארוך": "19:00-07:00",
-    "לילה": "22:30-07:00",
-    "חופש": "חופש"
+    "בוקר ☀️": "07:00-15:00",
+    "בוקר ארוך 🌤️": "07:00-19:00",
+    "ערב 🌇": "14:30-23:00",
+    "לילה ארוך 🦉": "19:00-07:00",
+    "לילה 🌙": "22:30-07:00",
+    "חופש 🌴": "חופש"
 }
 
 st.set_page_config(page_title="בורח ממשמרות - גרסת ה-VIP", page_icon="🏃‍♂️", layout="centered")
@@ -17,37 +17,19 @@ st.set_page_config(page_title="בורח ממשמרות - גרסת ה-VIP", page_
 # --- הזרקת CSS ---
 st.markdown("""
 <style>
-    /* הופך את כל האפליקציה מימין לשמאל */
-    .stApp {
-        direction: rtl;
+    .stApp { direction: rtl; }
+    p, div, h1, h2, h3, h4, h5, h6, label, span { text-align: right !important; }
+    .stSelectbox div[data-baseweb="select"] { text-align: right; }
+    [data-testid="stDataFrame"] { direction: rtl; }
+    
+    /* מרווחים פנימיים לכרטיסיות החדשות */
+    div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] {
+        gap: 0.5rem;
     }
     
-    /* מיישר את כל הטקסטים לימין */
-    p, div, h1, h2, h3, h4, h5, h6, label, span {
-        text-align: right !important;
-    }
-    
-    /* מתקן את תיבות הבחירה (Selectbox) שייראו טוב בעברית */
-    .stSelectbox div[data-baseweb="select"] {
-        text-align: right;
-    }
-    
-    /* טיפול בטבלה עצמה שלא תשתגע */
-    [data-testid="stDataFrame"] {
-        direction: rtl;
-    }
-
-    /* קסם המובייל: התאמות ספציפיות למסכים קטנים */
     @media (max-width: 768px) {
-        .block-container {
-            padding-top: 1.5rem !important;
-            padding-bottom: 1rem !important;
-            padding-left: 0.5rem !important;
-            padding-right: 0.5rem !important;
-        }
-        h1 {
-            font-size: 1.8rem !important;
-        }
+        .block-container { padding: 1.5rem 0.5rem 1rem 0.5rem !important; }
+        h1 { font-size: 1.8rem !important; }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -56,27 +38,41 @@ def clean_dataframe(df):
     df.columns = df.columns.astype(str).str.strip()
     df = df.drop(columns=['אחוז משרה'], errors='ignore')
     
+    # תרגום שעות למשמרות עם אימוג'י
     HOURS_TO_NAMES = {
-        "07:00-15:00": "בוקר", "7:00-15:00": "בוקר",
-        "07:00-19:00": "בוקר ארוך", "7:00-19:00": "בוקר ארוך",
-        "14:30-23:00": "ערב",
-        "19:00-07:00": "לילה ארוך", "19:00-7:00": "לילה ארוך",
-        "22:30-07:00": "לילה", "22:30-7:00": "לילה"
+        "07:00-15:00": "בוקר ☀️", "7:00-15:00": "בוקר ☀️",
+        "07:00-19:00": "בוקר ארוך 🌤️", "7:00-19:00": "בוקר ארוך 🌤️",
+        "14:30-23:00": "ערב 🌇",
+        "19:00-07:00": "לילה ארוך 🦉", "19:00-7:00": "לילה ארוך 🦉",
+        "22:30-07:00": "לילה 🌙", "22:30-7:00": "לילה 🌙"
+    }
+    
+    # תרגום מילים רגילות (במקרה שהמנהל כתב מילים ולא שעות) למילים עם אימוג'י
+    WORDS_TO_EMOJIS = {
+        "בוקר": "בוקר ☀️",
+        "בוקר ארוך": "בוקר ארוך 🌤️",
+        "ערב": "ערב 🌇",
+        "לילה ארוך": "לילה ארוך 🦉",
+        "לילה": "לילה 🌙",
+        "חופש": "חופש 🌴"
     }
     
     for col in df.columns:
         df[col] = df[col].astype(str).replace(r'\r|\n', '', regex=True).str.strip()
         if col != 'שם':
+            # קודם מתרגמים שעות
             df[col] = df[col].str.replace(' ', '', regex=False)
             for hours, name in HOURS_TO_NAMES.items():
                 df[col] = df[col].replace(hours, name)
+            
+            # אחר כך מוודאים שגם מילים רגילות מקבלות אימוג'י
+            df[col] = df[col].apply(lambda x: WORDS_TO_EMOJIS.get(x, x))
                 
-    df = df.replace(["nan", "None", "", "NaN"], "חופש")
-    df = df.fillna("חופש")
+    df = df.replace(["nan", "None", "", "NaN"], "חופש 🌴")
+    df = df.fillna("חופש 🌴")
     return df
 
 def generate_whatsapp_msg(tone, my_shift, partner_shift, day, partner_name):
-    """מייצר את הודעת הוואטסאפ לפי הטון הנבחר"""
     if tone == "נואש":
         return f"אחי, אני קורס פה. ארבל עשתה לנו בית ספר הלילה ואני מתחנן לשעות שינה. יש מצב שאתה לוקח לי את משמרת {my_shift} ביום {day} ואני אקח את ה{partner_shift} שלך? אני מחזיר לך מתי שרק תרצה, אני נואש."
     elif tone == "פילוסופי":
@@ -109,7 +105,7 @@ def main():
             df = pd.read_excel(uploaded_file, skiprows=rows_to_skip)
             
         df = clean_dataframe(df)
-        with st.expander("👀 לחץ כאן כדי להציץ בסידור המלא"):
+        with st.expander("👀 לחץ כאן כדי להציץ בסידור המלא (עכשיו עם אימוג'ים!)"):
             st.dataframe(df, use_container_width=True)
     except Exception as e:
         st.error(f"הקובץ הזה מקולקל. מישהו נגע בו! (שגיאה: {e})")
@@ -129,7 +125,7 @@ def main():
     if user_name == "בחר שם...": st.stop()
 
     user_shifts = df[df['שם'] == user_name].iloc[0].to_dict()
-    my_active_shifts = {day: shift for day, shift in user_shifts.items() if day != 'שם' and shift != 'חופש'}
+    my_active_shifts = {day: shift for day, shift in user_shifts.items() if day != 'שם' and shift != 'חופש 🌴'}
 
     if not my_active_shifts:
         st.balloons()
@@ -142,7 +138,7 @@ def main():
     current_shift = my_active_shifts[selected_day]
     st.warning(f"אתה רשום ל**{current_shift}** ביום **{selected_day}**. מצער מאוד.")
     
-    all_possible_shifts = ["בוקר", "בוקר ארוך", "ערב", "לילה ארוך", "לילה", "חופש"]
+    all_possible_shifts = ["בוקר ☀️", "בוקר ארוך 🌤️", "ערב 🌇", "לילה ארוך 🦉", "לילה 🌙", "חופש 🌴"]
     desired_shift = st.selectbox("ולאיזו משמרת היית מעדיף להחליף את זה?", all_possible_shifts)
 
     if desired_shift == current_shift:
@@ -154,7 +150,7 @@ def main():
     found_solution = False
     tone_options = ["נואש", "פילוסופי", "איש משפחה במצוקה", "עסקי וקר", "שוחד", "סרקסטי"]
 
-    if desired_shift != "חופש":
+    if desired_shift != "חופש 🌴":
         potential_swaps = df[(df[selected_day] == desired_shift) & (df['שם'] != user_name)]
         if not potential_swaps.empty:
             found_solution = True
@@ -162,23 +158,24 @@ def main():
             for _, row in potential_swaps.iterrows():
                 partner = row['שם']
                 
-                # עיצוב התוצאה עם כפתור הוואטסאפ
-                with st.container():
-                    st.success(f"**{partner}** עובד/ת ב{desired_shift}. דבר איתו/ה!")
-                    col_tone, col_btn = st.columns([2, 1])
+                # יצירת "כרטיסייה" מודרנית עם מסגרת
+                with st.container(border=True):
+                    col_info, col_tone, col_btn = st.columns([1.5, 2, 1])
+                    with col_info:
+                        st.markdown(f"### 👤 {partner}")
+                        st.caption(f"עובד/ת ב-{desired_shift}")
                     with col_tone:
                         selected_tone = st.selectbox("איך לפנות אליו/ה?", tone_options, key=f"tone_{partner}_{selected_day}")
                     with col_btn:
-                        st.write("") # מרווח קטן כדי ליישר את הכפתור
+                        st.write("") # מרווח כדי ליישר את הכפתור למטה
                         msg = generate_whatsapp_msg(selected_tone, current_shift, desired_shift, selected_day, partner)
                         url = f"https://wa.me/?text={urllib.parse.quote(msg)}"
                         st.link_button("שלח בוואטסאפ 💬", url, use_container_width=True)
-                    st.write("---")
         else:
             st.warning(f"בדקתי. אין אף אחד שעובד ב{desired_shift} ביום {selected_day}.")
 
     else:
-        free_that_day = df[(df[selected_day] == 'חופש') & (df['שם'] != user_name)]
+        free_that_day = df[(df[selected_day] == 'חופש 🌴') & (df['שם'] != user_name)]
         complex_swaps = []
         for _, partner in free_that_day.iterrows():
             partner_name = partner['שם']
@@ -187,7 +184,7 @@ def main():
                 if day in ['שם', selected_day]: continue 
                 if day in df.columns:
                     my_status_that_day = df[df['שם'] == user_name][day].values[0]
-                    if my_status_that_day == 'חופש' and p_shift != 'חופש':
+                    if my_status_that_day == 'חופש 🌴' and p_shift != 'חופש 🌴':
                         complex_swaps.append((partner_name, day, p_shift))
 
         if complex_swaps:
@@ -198,25 +195,23 @@ def main():
                 swap_day = swap[1]
                 partner_shift = swap[2]
                 
-                with st.container():
-                    st.info(f"**{partner_name}** בחופש ב{selected_day}, אבל עובד ב{swap_day} ({partner_shift}). תציע לו את המשמרת שלך!")
-                    col_tone, col_btn = st.columns([2, 1])
+                # יצירת כרטיסיית "דיל מורכב"
+                with st.container(border=True):
+                    col_info, col_tone, col_btn = st.columns([1.5, 2, 1])
+                    with col_info:
+                        st.markdown(f"### 🌴 {partner_name}")
+                        st.caption(f"בחופש ב-{selected_day} | עובד/ת ב-{swap_day} ({partner_shift})")
                     with col_tone:
                         selected_tone = st.selectbox("איך לפנות אליו/ה?", tone_options, key=f"tone_{partner_name}_{swap_day}_complex")
                     with col_btn:
                         st.write("")
-                        # בונים הודעה שמותאמת לדיל המורכב (של יום אחר)
                         msg = generate_whatsapp_msg(selected_tone, current_shift, partner_shift, selected_day, partner_name)
-                        # מוסיפים הבהרה להודעה על היום השני
                         msg += f" (ואני אחזיר לך ואקח את המשמרת שלך ביום {swap_day})."
                         url = f"https://wa.me/?text={urllib.parse.quote(msg)}"
                         st.link_button("שלח בוואטסאפ 💬", url, use_container_width=True)
-                    st.write("---")
 
     if not found_solution:
         st.error("האלגוריתם סיים לחשב. אין דילים רלוונטיים. קח נשימה עמוקה ולך להכין קפה שחור. ☕💀")
 
 if __name__ == "__main__":
     main()
-
-
