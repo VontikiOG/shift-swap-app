@@ -136,7 +136,8 @@ def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, per
         for d, s in shifts.items():
             workload_b = get_workload_text(b_name, df)
             with st.container(border=True):
-                st.markdown(f"ההצעה ל{person_a_name}: משמרת **{s}** ב{d} (מאת {b_name})")
+                # התיקון כאן: המילה "של" במקום "מאת" או ניסוח מסורבל
+                st.markdown(f"ההצעה ל{person_a_name}: משמרת **{s}** ב{d} (של {b_name})")
                 st.caption(f"על המושיע/ה: {workload_b}")
                 
                 explanation_text = f"הנה הקומבינה: המשמרת שיש לך ב{selected_day} {person_a_shift} עוברת אליי. בתמורה, המשמרת של {b_name} ב{d} {s} תהיה שלך, ו-{b_name} ייקח את ה{user_shift} במקומי. כל הצדדים מנצחים!"
@@ -144,7 +145,6 @@ def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, per
                 
                 col_btn, col_pop, col_hr = st.columns([1,1,1])
                 with col_btn:
-                    # כפתור שמקפיץ את חלון העריכה!
                     if st.button("שליחה בוואטסאפ 💬", use_container_width=True, key=f"btn_tri_{person_a_name}_{b_name}_{d}"):
                         edit_and_send_dialog(default_msg)
                 with col_pop:
@@ -160,7 +160,7 @@ def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, per
 
 def main():
     st.title("מערכת חילופי משמרות 🔄")
-    st.caption("v1.3 | גרסת החלונות הקופצים 🧼")
+    st.caption("v1.3.1 | גרסת החלונות הקופצים 🧼")
     
     st.markdown("ברוכים הבאים למערכת שתנסה למזער את הנזק בסידור העבודה. רק להעלות את הקובץ, ולתת לאלגוריתם לשבור את הראש במקומכם.")
 
@@ -259,7 +259,6 @@ def main():
                     
                     col_btn, col_hr = st.columns(2)
                     with col_btn:
-                        # החלון הקופץ הרגיל
                         if st.button("שליחה בוואטסאפ 💬", use_container_width=True, key=f"btn_send_{partner}_{selected_day}"):
                             edit_and_send_dialog(default_msg)
                     with col_hr:
@@ -312,7 +311,6 @@ def main():
                     
                     col_btn, col_hr = st.columns(2)
                     with col_btn:
-                        # החלון הקופץ לדילים של חופש
                         if st.button("שליחה בוואטסאפ 💬", use_container_width=True, key=f"btn_send_comp_{partner_name}_{swap_day}"):
                             edit_and_send_dialog(default_msg)
                     with col_hr:
