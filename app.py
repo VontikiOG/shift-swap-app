@@ -40,13 +40,20 @@ st.markdown("""
 
 def clean_dataframe(df):
     """
-    פונקציה שמנקה את האקסל מכל הלכלוך של ההנהלה
+    פונקציה שמנקה את האקסל באגרסיביות מכל הלכלוך הסמוי של ההנהלה
     """
-    df.columns = df.columns.str.strip()
-    df = df.fillna("חופש")
+    # ניקוי שמות העמודות
+    df.columns = df.columns.astype(str).str.strip()
+    
+    # מעבר על כל התאים בטבלה וניקוי יסודי
     for col in df.columns:
-        if df[col].dtype == 'object':
-            df[col] = df[col].str.strip()
+        # הופך לטקסט, מוחק ירידות שורה נסתרות, ומגלח רווחים מקצוות המילה
+        df[col] = df[col].astype(str).replace(r'\r|\n', '', regex=True).str.strip()
+        
+    # אם היו תאים ריקים שהפכו לטקסט "nan", נהפוך אותם ל"חופש"
+    df = df.replace(["nan", "None", "", "NaN"], "חופש")
+    df = df.fillna("חופש")
+    
     return df
 
 def main():
@@ -166,3 +173,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
