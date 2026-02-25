@@ -10,33 +10,31 @@ SHIFT_TYPES = {
     "לילה": "22:30-07:00",
     "חופש": "חופש"
 }
-
 st.set_page_config(page_title="בורח ממשמרות - גרסת ה-VIP", page_icon="🏃‍♂️", layout="centered")
 # --- הזרקת CSS כדי להפוך את האתר לימין-לשמאל (RTL) ---
-    st.markdown("""
-    <style>
-        /* הופך את כל האפליקציה מימין לשמאל */
-        .stApp {
-            direction: rtl;
-        }
-        
-        /* מיישר את כל הטקסטים לימין */
-        p, div, h1, h2, h3, h4, h5, h6, label, span {
-            text-align: right !important;
-        }
-        
-        /* מתקן את תיבות הבחירה (Selectbox) שייראו טוב בעברית */
-        .stSelectbox div[data-baseweb="select"] {
-            text-align: right;
-        }
-        
-        /* טיפול בטבלה עצמה שלא תשתגע */
-        [data-testid="stDataFrame"] {
-            direction: rtl;
-        }
-    </style>
-    """, unsafe_allow_html=True)
-
+st.markdown("""
+<style>
+    /* הופך את כל האפליקציה מימין לשמאל */
+    .stApp {
+        direction: rtl;
+    }
+    
+    /* מיישר את כל הטקסטים לימין */
+    p, div, h1, h2, h3, h4, h5, h6, label, span {
+        text-align: right !important;
+    }
+    
+    /* מתקן את תיבות הבחירה (Selectbox) שייראו טוב בעברית */
+    .stSelectbox div[data-baseweb="select"] {
+        text-align: right;
+    }
+    
+    /* טיפול בטבלה עצמה שלא תשתגע */
+    [data-testid="stDataFrame"] {
+        direction: rtl;
+    }
+</style>
+""", unsafe_allow_html=True)
 def clean_dataframe(df):
     """
     פונקציה שמנקה את האקסל מכל הלכלוך של ההנהלה
@@ -164,4 +162,5 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
