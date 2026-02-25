@@ -21,13 +21,12 @@ st.markdown("""
     p, div, h1, h2, h3, h4, h5, h6, label, span { text-align: right !important; }
     .stSelectbox div[data-baseweb="select"], .stMultiSelect div[data-baseweb="select"] { text-align: right; }
     
-    /* 1. הריגת המקלדת הקופצת במובייל! מעלים את שדה הטקסט בתוך התיבות */
+    /* התיקון: ביטלנו את ה-display: none שהרג את הכפתור. העלמנו רק את סמן ההקלדה */
     div[data-baseweb="select"] input {
-        display: none !important;
         caret-color: transparent !important;
     }
 
-    /* 2. כרית אוויר ענקית למטה כדי לברוח מהפרסומות של האחסון */
+    /* כרית אוויר ענקית למטה כדי לברוח מהפרסומות של האחסון */
     .block-container { 
         padding-bottom: 300px !important; 
     }
@@ -118,7 +117,6 @@ def generate_whatsapp_msg(tone, my_shift, partner_shift, day, partner_name):
     return ""
 
 def generate_freedom_swap_msg(tone, my_shift, my_day, partner_shift, partner_day, partner_name):
-    """מייצר הודעה מיוחדת לדיל חופש-תמורת-חופש"""
     explanation = f"ראיתי שיש לך חופש ב{my_day}. יש מצב שתיקח את ה{my_shift} שלי באותו יום, ובתמורה אני אקח את ה{partner_shift} שלך ב{partner_day}? ככה מאזן המשמרות נשאר אותו דבר, ופשוט יום החופש שלך יעבור ל{partner_day}!"
     
     if tone == "נואש":
@@ -183,7 +181,7 @@ def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, per
 
 def main():
     st.title("מערכת חילופי משמרות 🔄")
-    st.caption("v1.4 | גרסת המובייל והחופש הגדול 🏖️")
+    st.caption("v1.4.1 | תיקון הכפתורים 🛠️")
     
     st.markdown("ברוכים הבאים למערכת שתנסה למזער את הנזק בסידור העבודה. רק להעלות את הקובץ, ולתת לאלגוריתם לשבור את הראש במקומכם.")
 
@@ -217,7 +215,6 @@ def main():
     
     col1, col2 = st.columns(2)
     with col1:
-        # תיקון ל"מה שמך" במקום הקורבן
         user_name = st.selectbox("מה שמך?", ["בחר שם..."] + workers_list)
     if user_name == "בחר שם...": st.stop()
 
@@ -300,20 +297,17 @@ def main():
         for _, partner in free_that_day.iterrows():
             partner_name = partner['שם']
             
-            # בדיקה חוקית שהפרטנר יכול לקחת את המשמרת שלך ביום הזה
             if not check_legal_rest(partner_name, current_shift, selected_day, df):
                 continue
                 
             partner_shifts = partner.to_dict()
             valid_return_shifts = []
             
-            # סריקה של שאר השבוע למצוא משמרת ש*הוא* עובד ו*אתה* בחופש (והיא חוקית בשבילך)
             for day, p_shift in partner_shifts.items():
                 if day in ['שם', selected_day]: continue 
                 if day in df.columns:
                     my_status_that_day = df[df['שם'] == user_name][day].values[0]
                     if my_status_that_day == 'חופש 🌴' and p_shift != 'חופש 🌴':
-                        # בדיקת לילה-בוקר על *עצמך*! (האם מותר לי לקחת את המשמרת הזאת?)
                         if check_legal_rest(user_name, p_shift, day, df):
                             valid_return_shifts.append((day, p_shift))
 
@@ -340,12 +334,10 @@ def main():
                         st.caption(f"חופש ב{selected_day} | {workload_text}")
                     
                     with col_tone:
-                        # המשתמש בוחר איזו משמרת לקחת מתוך מה שהפרטנר עובד
                         options_formatted = [f"לקחת לו את ה{s} ב{d}" for d, s in options]
                         selected_option_idx = st.selectbox("איזו משמרת תיקח במקום?", range(len(options_formatted)), format_func=lambda x: options_formatted[x], key=f"sel_shift_{partner_name}_{selected_day}")
                         selected_tone = st.selectbox("באיזו גישה נתקוף?", tone_options, key=f"tone_comp_{partner_name}_{selected_day}")
                     
-                    # חילוץ היום והמשמרת שבחרת לקחת
                     partner_day, partner_shift = options[selected_option_idx]
                     
                     default_msg = generate_freedom_swap_msg(selected_tone, current_shift, selected_day, partner_shift, partner_day, partner_name)
