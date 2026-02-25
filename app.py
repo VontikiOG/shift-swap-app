@@ -99,20 +99,22 @@ def clean_dataframe(df):
     return df
 
 def main():
-    st.title("מערכת חילופי משמרות 🏴‍☠️")
-    st.markdown("ברוך הבא למערכת שתציל לך את הסופ'ש. העלה את האקסל, ותן לאלגוריתם לעבוד בשבילך.")
-
     # --- שלב 1: העלאת הקובץ ---
-    uploaded_file = st.file_uploader("👇 זרוק פה את האקסל/CSV", type=['csv', 'xlsx'])
+    st.info("👇 זרוק פה את האקסל/CSV. המערכת תתעלם מהקישוטים של ההנהלה.")
+    uploaded_file = st.file_uploader("", type=['csv', 'xlsx'])
+    
+    # הוספנו טריק חדש: בחירת מספר שורות לדילוג!
+    rows_to_skip = st.number_input("כמה שורות כותרת מיותרות יש למעלה שצריך לדלג עליהן?", min_value=0, max_value=15, value=2)
     
     if uploaded_file is None:
         st.stop()
 
     try:
+        # כאן אנחנו אומרים לפייתון לדלג על השורות שהגדרנו (skiprows)
         if uploaded_file.name.endswith('csv'):
-            df = pd.read_csv(uploaded_file)
+            df = pd.read_csv(uploaded_file, skiprows=rows_to_skip)
         else:
-            df = pd.read_excel(uploaded_file)
+            df = pd.read_excel(uploaded_file, skiprows=rows_to_skip)
             
         df = clean_dataframe(df)
         
@@ -215,6 +217,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
