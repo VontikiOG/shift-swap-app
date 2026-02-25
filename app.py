@@ -19,13 +19,9 @@ st.markdown("""
 <style>
     .stApp { direction: rtl; }
     p, div, h1, h2, h3, h4, h5, h6, label, span { text-align: right !important; }
-    .stSelectbox div[data-baseweb="select"] { text-align: right; }
+    .stSelectbox div[data-baseweb="select"], .stMultiSelect div[data-baseweb="select"] { text-align: right; }
     [data-testid="stDataFrame"] { direction: rtl; }
-    
-    div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] {
-        gap: 0.5rem;
-    }
-    
+    div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] { gap: 0.5rem; }
     @media (max-width: 768px) {
         .block-container { padding: 1.5rem 0.5rem 1rem 0.5rem !important; }
         h1 { font-size: 1.8rem !important; }
@@ -44,7 +40,6 @@ def clean_dataframe(df):
         "19:00-07:00": "לילה ארוך 🦉", "19:00-7:00": "לילה ארוך 🦉",
         "22:30-07:00": "לילה 🌙", "22:30-7:00": "לילה 🌙"
     }
-    
     WORDS_TO_EMOJIS = {
         "בוקר": "בוקר ☀️", "בוקר ארוך": "בוקר ארוך 🌤️",
         "ערב": "ערב 🌇", "לילה ארוך": "לילה ארוך 🦉",
@@ -63,27 +58,22 @@ def clean_dataframe(df):
     df = df.fillna("חופש 🌴")
     return df
 
-def check_legal_rest(partner_name, shift_to_take, day_taking, df):
-    """
-    מונע מצב שמישהו שלוקח משמרת לילה, יעבוד בוקר ביום שאחרי
-    """
+def check_legal_rest(person_taking_shift, shift_to_take, day_taking, df):
+    """בודק שאין רצף לא חוקי של לילה ואז בוקר"""
     if shift_to_take not in ["לילה 🌙", "לילה ארוך 🦉"]:
-        return True # לא משמרת לילה? הכל חוקי
+        return True 
         
     days = [col for col in df.columns if col != 'שם']
     if day_taking in days:
         idx = days.index(day_taking)
-        # בודקים אם יש יום למחרת בטבלה
         if idx + 1 < len(days):
             next_day = days[idx + 1]
-            partner_next_shift = df[df['שם'] == partner_name][next_day].values[0]
-            # אם למחרת הוא בבוקר - אסור לו לקחת את הלילה!
+            partner_next_shift = df[df['שם'] == person_taking_shift][next_day].values[0]
             if partner_next_shift in ["בוקר ☀️", "בוקר ארוך 🌤️"]:
                 return False 
     return True
 
 def generate_whatsapp_msg(tone, my_shift, partner_shift, day, partner_name):
-    # צונזר ממשפחה, שמות ופרטים מזהים - מותאם לכל עובד במשרד!
     if tone == "נואש":
         return f"אחי, אני קורס פה. הייתה לי חתיכת לילה לבן ואני מתחנן לשעות שינה. יש מצב שאתה לוקח לי את משמרת {my_shift} ביום {day} ואני אקח את ה{partner_shift} שלך? אני מחזיר לך מתי שרק תרצה, אני נואש."
     elif tone == "פילוסופי":
@@ -97,6 +87,46 @@ def generate_whatsapp_msg(tone, my_shift, partner_shift, day, partner_name):
     elif tone == "סרקסטי":
         return f"היי {partner_name}, ראיתי שהאלגוריתם שידך בינינו. אתה עובד ב{partner_shift} ואני תקוע ב{my_shift} ביום {day}. בוא נתחלף כדי שאני לא אצטרך לראות את הפרצוף של הבוס. נו?"
     return ""
+
+def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, person_a_shift, df):
+    """
+    מנוע ההחלפה המשולשת 🔀
+    מחפש את 'צלע ב' (המושיע) שייקח את המשמרת שלך, וייתן משהו ל'צלע א' (הסרבן)
+    """
+    # 1. מוצאים את כל מי שפנוי ביום הזה (ויכול חוקית לקחת את המשמרת שלך)
+    person_bs = df[(df[selected_day] == 'חופש 🌴') & (df['שם'] != user_name) & (df['שם'] != person_a_name)]
+    
+    valid_bs = []
+    for _, row in person_bs.iterrows():
+        b_name = row['שם']
+        if check_legal_rest(b_name, user_shift, selected_day, df):
+            
+            # 2. איזה משמרות יש ל-B להציע ל-A בשאר השבוע?
+            b_shifts = row.to_dict()
+            offerable_shifts = {}
+            for d, s in b_shifts.items():
+                if d not in ['שם', selected_day] and s != 'חופש 🌴':
+                    # 3. בדיקת חוקיות פסיכית: האם A יכול חוקית לקחת את המשמרת של B ביום הזה?
+                    if check_legal_rest(person_a_name, s, d, df):
+                        offerable_shifts[d] = s
+            
+            if offerable_shifts:
+                valid_bs.append((b_name, offerable_shifts))
+                
+    if not valid_bs:
+        st.error("האלגוריתם לא מצא אף 'מושיע' (צלע שלישית) שפנוי לקחת את המשמרת שלך ולהציע משהו חוקי בתמורה.")
+        return
+        
+    st.markdown("##### 🦸‍♂️ רשימת המושיעים (הדיל המשולש):")
+    st.write("האנשים האלה יכולים לקחת את המשמרת שלך. הנה מה שיש להם להציע לסרבן:")
+    
+    for b_name, shifts in valid_bs:
+        shifts_text = " | ".join([f"{d} ({s})" for d, s in shifts.items()])
+        st.info(f"**{b_name}** פנוי/ה. יכול להציע את: {shifts_text}")
+        
+        msg = f"היי {person_a_name}. אני יודע שסירבת לקחת לי את ה{user_shift}, אבל תפרגני לי שנייה: בניתי לנו דיל משולש! {b_name} לוקח ממני את ה{user_shift} שלי. בתמורה, את/ה מביא/ה לי את ה{person_a_shift} שלך ביום {selected_day}, ומקבל/ת מ{b_name} משמרת אחרת לבחירתך: {shifts_text}. מה אומר/ת? מציל/ה אותי!"
+        url = f"https://wa.me/?text={urllib.parse.quote(msg)}"
+        st.link_button(f"שלח הצעת משולש ל-{person_a_name} 💬", url)
 
 def main():
     st.title("מערכת חילופי משמרות 🔄")
@@ -147,57 +177,64 @@ def main():
         selected_day = st.selectbox("מאיזה יום אתה מנסה לברוח?", list(my_active_shifts.keys()))
     
     current_shift = my_active_shifts[selected_day]
-    st.warning(f"אתה רשום ל**{current_shift}** ביום **{selected_day}**. מצער מאוד.")
+    st.warning(f"אתה רשום ל**{current_shift}** ביום **{selected_day}**.")
     
     all_possible_shifts = ["בוקר ☀️", "בוקר ארוך 🌤️", "ערב 🌇", "לילה ארוך 🦉", "לילה 🌙", "חופש 🌴"]
-    desired_shift = st.selectbox("ולאיזו משמרת היית מעדיף להחליף את זה?", all_possible_shifts)
+    
+    desired_shifts = st.multiselect("איזו משמרת היית מעדיף? (אפשר לבחור כמה אופציות)", all_possible_shifts)
 
-    if desired_shift == current_shift:
-        st.error("אתה מנסה להחליף את המשמרת שלך... לאותה משמרת בדיוק. הכל טוב בבית? 🤨")
+    if not desired_shifts:
+        st.stop() 
+
+    if current_shift in desired_shifts:
+        st.error("בחרת את המשמרת שאתה כבר רשום אליה... נא להסיר אותה מהרשימה.")
         st.stop()
 
     st.divider()
-    st.subheader(f"🎯 תוצאות החיפוש עבור '{desired_shift}':")
+    st.subheader(f"🎯 תוצאות החיפוש:")
     found_solution = False
     tone_options = ["נואש", "פילוסופי", "איש משפחה במצוקה", "עסקי וקר", "שוחד", "סרקסטי"]
 
-    if desired_shift != "חופש 🌴":
-        potential_swaps = df[(df[selected_day] == desired_shift) & (df['שם'] != user_name)]
+    # --- פיצול הלוגיקה: חיפוש משמרות רגילות ---
+    regular_shifts_wanted = [s for s in desired_shifts if s != "חופש 🌴"]
+    
+    if regular_shifts_wanted:
+        potential_swaps = df[(df[selected_day].isin(regular_shifts_wanted)) & (df['שם'] != user_name)]
+        
         if not potential_swaps.empty:
+            st.markdown(f"#### 🔄 דילים של החלפת משמרות (אותו יום):")
             for _, row in potential_swaps.iterrows():
                 partner = row['שם']
+                partner_shift = row[selected_day]
                 
-                # בודקים שעות מנוחה (שלא ייקח לילה ואז יעבוד בוקר)
                 if not check_legal_rest(partner, current_shift, selected_day, df):
-                    continue # מדלגים עליו, זה לא חוקי!
+                    continue 
                 
                 found_solution = True
                 with st.container(border=True):
                     col_info, col_tone, col_btn = st.columns([1.5, 2, 1])
                     with col_info:
                         st.markdown(f"### 👤 {partner}")
-                        st.caption(f"עובד/ת ב-{desired_shift}")
+                        st.caption(f"עובד/ת ב-{partner_shift}")
                     with col_tone:
                         selected_tone = st.selectbox("איך לפנות אליו/ה?", tone_options, key=f"tone_{partner}_{selected_day}")
                     with col_btn:
                         st.write("") 
-                        msg = generate_whatsapp_msg(selected_tone, current_shift, desired_shift, selected_day, partner)
+                        msg = generate_whatsapp_msg(selected_tone, current_shift, partner_shift, selected_day, partner)
                         url = f"https://wa.me/?text={urllib.parse.quote(msg)}"
                         st.link_button("שלח בוואטסאפ 💬", url, use_container_width=True)
-                        
-            if found_solution:
-                st.markdown("*(סוננו אוטומטית עובדים שאסור להם לקחת את המשמרת שלך בגלל שעות מנוחה)*")
-        
-        if not found_solution:
-            st.warning(f"בדקתי. אין אף אחד שיכול לעזור ב{desired_shift} ביום {selected_day} (או שזה נופל להם על שעות מנוחה).")
+                    
+                    # הכפתור של ההחלפה המשולשת עם האימוג'י החדש 🔀
+                    with st.expander(f"🔀 {partner} סירב לך? חפש דיל משולש"):
+                        find_triangular_swap(user_name, current_shift, selected_day, partner, partner_shift, df)
 
-    else:
+    # --- פיצול הלוגיקה: חיפוש חופש ---
+    if "חופש 🌴" in desired_shifts:
         free_that_day = df[(df[selected_day] == 'חופש 🌴') & (df['שם'] != user_name)]
         complex_swaps = []
         for _, partner in free_that_day.iterrows():
             partner_name = partner['שם']
             
-            # בודקים שעות מנוחה לפני שמציעים את הדיל המורכב
             if not check_legal_rest(partner_name, current_shift, selected_day, df):
                 continue
                 
@@ -233,7 +270,7 @@ def main():
                         st.link_button("שלח בוואטסאפ 💬", url, use_container_width=True)
 
     if not found_solution:
-        st.error("האלגוריתם סיים לחשב. אין דילים רלוונטיים. קח נשימה עמוקה ולך להכין קפה שחור. ☕💀")
+        st.error("האלגוריתם סיים לחשב. אין דילים רלוונטיים (או שזה נופל להם על שעות מנוחה). קח נשימה עמוקה ולך להכין קפה שחור. ☕💀")
 
 if __name__ == "__main__":
     main()
