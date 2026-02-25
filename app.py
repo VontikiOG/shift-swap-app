@@ -10,7 +10,9 @@ SHIFT_TYPES = {
     "לילה": "22:30-07:00",
     "חופש": "חופש"
 }
+
 st.set_page_config(page_title="בורח ממשמרות - גרסת ה-VIP", page_icon="🏃‍♂️", layout="centered")
+
 # --- הזרקת CSS כדי להפוך את האתר לימין-לשמאל (RTL) ---
 st.markdown("""
 <style>
@@ -35,35 +37,28 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
 def clean_dataframe(df):
     """
     פונקציה שמנקה את האקסל מכל הלכלוך של ההנהלה
     """
-    # מוחק רווחים מיותרים בשמות העמודות
     df.columns = df.columns.str.strip()
-    
-    # אם יש תאים ריקים, הופך אותם ל"חופש" (אופטימיות זה חשוב)
     df = df.fillna("חופש")
-    
-    # מנקה רווחים מכל התאים בטבלה
     for col in df.columns:
         if df[col].dtype == 'object':
             df[col] = df[col].str.strip()
-            
     return df
 
 def main():
     st.title("מערכת חילופי משבויות 🏴‍☠️")
-    st.markdown('ברוך הבא למערכת שתציל לך את הסופ"ש. העלה את האקסל, ותן לאלגוריתם למצוא לך פראייר... אה, כלומר, *קולגה* שיחליף אותך.')
+    st.markdown("ברוך הבא למערכת שתציל לך את הסופ'ש. העלה את האקסל, ותן לאלגוריתם לעבוד בשבילך.")
 
     # --- שלב 1: העלאת הקובץ ---
-    st.info("👇 זרוק פה את האקסל/CSV המקורי. לא תמונות, אנחנו לא בימי הביניים.")
-    uploaded_file = st.file_uploader("", type=['csv', 'xlsx'])
+    uploaded_file = st.file_uploader("👇 זרוק פה את האקסל/CSV", type=['csv', 'xlsx'])
     
     if uploaded_file is None:
-        st.stop() # עוצרים הכל עד שיש קובץ. אין קובץ? אין בריחה.
+        st.stop()
 
-    # קריאת הקובץ
     try:
         if uploaded_file.name.endswith('csv'):
             df = pd.read_csv(uploaded_file)
@@ -72,7 +67,7 @@ def main():
             
         df = clean_dataframe(df)
         
-        with st.expander("👀 לחץ כאן כדי להציץ בסידור המלא (על אחריותך בלבד)"):
+        with st.expander("👀 לחץ כאן כדי להציץ בסידור המלא"):
             st.dataframe(df, use_container_width=True)
             
     except Exception as e:
@@ -81,9 +76,9 @@ def main():
 
     st.divider()
 
-    # --- שלב 2: מי אתה ומה הבעיה שלך? ---
+    # --- שלב 2: מי אתה וממה אתה בורח? ---
     if 'שם' not in df.columns:
-        st.error("🚨 קריסה! אין עמודה בשם 'שם' באקסל. מי עשה את הטבלה הזאת?!")
+        st.error("🚨 קריסה! אין עמודה בשם 'שם' באקסל. נא לתקן את הקובץ.")
         st.stop()
 
     workers_list = df['שם'].unique().tolist()
@@ -96,71 +91,78 @@ def main():
         st.stop()
 
     user_shifts = df[df['שם'] == user_name].iloc[0].to_dict()
-    # מוציאים את המשמרות הפעילות (מסננים 'שם' ו'חופש')
     my_active_shifts = {day: shift for day, shift in user_shifts.items() 
                         if day != 'שם' and shift != 'חופש'}
 
     if not my_active_shifts:
         st.balloons()
-        st.success("אין לך משמרות השבוע! אתה חופשי כמו ציפור! 🦅 עוף מפה ואל תסתכל אחורה.")
+        st.success("אין לך משמרות השבוע! עוף לים ואל תסתכל אחורה. 🏖️")
         st.stop()
 
     with col2:
         selected_day = st.selectbox("מאיזה יום אתה מנסה לברוח?", list(my_active_shifts.keys()))
     
     current_shift = my_active_shifts[selected_day]
-    shift_hours = SHIFT_TYPES.get(current_shift, "שעות לא ידועות")
     
-    st.warning(f"אאוצ'. אתה רשום למשמרת **{current_shift}** ביום **{selected_day}** ({shift_hours}). בוא נראה מי יכול להציל אותך.")
+    # --- שלב 3: מה אתה רוצה במקום? (השדרוג החדש!) ---
+    st.warning(f"אתה רשום ל**{current_shift}** ביום **{selected_day}**. מצער מאוד.")
+    
+    all_possible_shifts = ["בוקר", "בוקר ארוך", "ערב", "לילה ארוך", "לילה", "חופש"]
+    desired_shift = st.selectbox("ולאיזו משמרת היית מעדיף להחליף את זה?", all_possible_shifts)
+
+    if desired_shift == current_shift:
+        st.error("אתה מנסה להחליף את המשמרת שלך... לאותה משמרת בדיוק. הכל טוב בבית? 🤨")
+        st.stop()
+
     st.divider()
 
-    # --- שלב 3: מציאת הקורבנות (הלוגיקה) ---
-    st.subheader("🎯 תוצאות החיפוש:")
+    # --- שלב 4: מציאת הקורבנות לפי הסינון המדויק ---
+    st.subheader(f"🎯 תוצאות החיפוש עבור '{desired_shift}':")
     
     found_solution = False
 
-    # 1. החלפה באותו יום (משמרת תמורת משמרת)
-    potential_swaps_same_day = df[(df[selected_day] != 'חופש') & 
-                                  (df[selected_day] != current_shift) & 
-                                  (df['שם'] != user_name)]
-    
-    if not potential_swaps_same_day.empty:
-        found_solution = True
-        st.markdown("#### 🔄 החלפות 'ראש בראש' (באותו יום)")
-        for _, row in potential_swaps_same_day.iterrows():
-            partner = row['שם']
-            partner_shift = row[selected_day]
-            st.success(f"**{partner}** עובד/ת ב{partner_shift}. אולי תציע לו/ה את ה{current_shift} שלך?")
-
-    # 2. החלפה תמורת חופש ביום אחר
-    free_that_day = df[(df[selected_day] == 'חופש') & (df['שם'] != user_name)]
-    
-    complex_swaps = []
-    for _, partner in free_that_day.iterrows():
-        partner_name = partner['שם']
-        partner_shifts = partner.to_dict()
+    # מקרה א': המשתמש רוצה משמרת אחרת באותו יום (לא חופש)
+    if desired_shift != "חופש":
+        # מחפשים מישהו שספציפית עובד במשמרת שהמשתמש רוצה, באותו יום
+        potential_swaps = df[(df[selected_day] == desired_shift) & (df['שם'] != user_name)]
         
-        for day, p_shift in partner_shifts.items():
-            if day in ['שם', selected_day]: continue 
-            
-            if day in df.columns:
-                my_status_that_day = df[df['שם'] == user_name][day].values[0]
-                
-                # אם אני בחופש ביום שהוא עובד בו - מצאנו שידוך!
-                if my_status_that_day == 'חופש' and p_shift != 'חופש':
-                    complex_swaps.append((partner_name, day, p_shift))
+        if not potential_swaps.empty:
+            found_solution = True
+            st.markdown(f"#### 🔄 מצאנו אנשים שעובדים ב{desired_shift} ביום {selected_day}:")
+            for _, row in potential_swaps.iterrows():
+                partner = row['שם']
+                st.success(f"**{partner}** עובד/ת ב{desired_shift}. דבר איתו/ה ותציע את ה{current_shift} שלך!")
+        else:
+            st.warning(f"בדקתי. אין אף אחד שעובד ב{desired_shift} ביום {selected_day}. כנראה כולם חכמים ממך או שהמשמרת ריקה.")
 
-    if complex_swaps:
-        found_solution = True
-        st.markdown("#### 🤝 דילים מורכבים (תן משמרת, קח משמרת)")
-        for swap in complex_swaps:
-            st.info(f"**{swap[0]}** בחופש ביום {selected_day}! אבל הוא עובד ביום **{swap[1]}** ({swap[2]}). הצע לו לקחת את המשמרת שלך עכשיו, ותחזיר לו ב{swap[1]}.")
+    # מקרה ב': המשתמש רוצה "חופש" ביום הזה
+    else:
+        # מחפשים מישהו שבחופש ביום הזה, ויכול לקחת את המשמרת שלנו תמורת יום עתידי שאנחנו בחופש
+        free_that_day = df[(df[selected_day] == 'חופש') & (df['שם'] != user_name)]
+        
+        complex_swaps = []
+        for _, partner in free_that_day.iterrows():
+            partner_name = partner['שם']
+            partner_shifts = partner.to_dict()
+            
+            for day, p_shift in partner_shifts.items():
+                if day in ['שם', selected_day]: continue 
+                
+                if day in df.columns:
+                    my_status_that_day = df[df['שם'] == user_name][day].values[0]
+                    
+                    # אם אני בחופש ביום שהוא עובד בו - בינגו!
+                    if my_status_that_day == 'חופש' and p_shift != 'חופש':
+                        complex_swaps.append((partner_name, day, p_shift))
+
+        if complex_swaps:
+            found_solution = True
+            st.markdown(f"#### 🌴 דילים מורכבים להשגת חופש ביום {selected_day}:")
+            for swap in complex_swaps:
+                st.info(f"**{swap[0]}** בחופש ביום {selected_day}. הוא עובד ביום **{swap[1]}** ({swap[2]}). תציע לו את המשמרת שלך, ותחזיר לו ב{swap[1]}.")
 
     if not found_solution:
-        st.error("המחשב חישב, חקר ובדק... והגיע למסקנה שנדפקת. אין אף אחד שיכול להחליף אותך. תכין הרבה קפה. ☕💀")
+        st.error("האלגוריתם סיים לחשב. התוצאה: אין דילים רלוונטיים. קח נשימה עמוקה ולך להכין קפה שחור. ☕💀")
 
 if __name__ == "__main__":
-
     main()
-
-
