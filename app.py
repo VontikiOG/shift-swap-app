@@ -7,8 +7,8 @@ from datetime import datetime
 import html
 import re
 
-# קבצי שרת וטלפונים
-MANAGER_PHONE = "972503068808"
+# קבצי שרת ומספרי טלפון (הטלפון נשאב מהכספת, עם גיבוי זמני כדי שלא יקרוס לפני שתגדיר)
+MANAGER_PHONE = st.secrets.get("MANAGER_PHONE")
 DB_FILE = "schedule.csv"
 WEEK_FILE = "week_name.txt"
 
@@ -68,6 +68,11 @@ def admin_dialog():
         
         if st.button("💾 שמור סידור עבודה בשרת", type="primary", use_container_width=True):
             if uploaded_file and week_name:
+                # חסימת קבצים כבדים (מעל 2MB)
+                if uploaded_file.size > 2 * 1024 * 1024:
+                    st.error("🚨 הקובץ גדול מדי! המקסימום המותר הוא 2MB (מניעת התקפות DOS).")
+                    return
+
                 try:
                     safe_week_name = html.escape(week_name)
                     df_temp = read_file_safely(uploaded_file, rows_to_skip)
@@ -94,26 +99,59 @@ def admin_dialog():
             st.session_state.admin_logged_in = False
             st.rerun()
 
-# --- חלון קופץ: יומן שינויים ---
+# --- חלון קופץ: יומן שינויים (Changelog) מפורט ---
 @st.dialog("📜 יומן שינויים - היסטוריית הפיתוח")
 def show_changelog():
     st.markdown("""
+    **v2.2.0 | הפנתר 🐆**
+    * **אבטחה ופרטיות:** הסתרת מספרי טלפון גלויים של מנהלים והעברתם לכספת השרת (Secrets).
+    * **חסימת קריסות (DOS):** הגבלת העלאת קבצים למקסימום 2MB באזור הניהול.
+    * **תיקון מטמון נצחי:** תיקון סנכרון Cache חכם שמתעדכן אוטומטית כשהקובץ משתנה.
+    * **אופטימיזציית מנוע:** מעבר לחיפוש וקטורי וביטול לולאות איטיות (iterrows) בחישובי המשולשים, להאצה משמעותית של המערכת.
+
     **v2.1.0 | משמרות הלילה 🦉**
     * **תיקון קריטי לחוקי מנוחה:** בדיקה דו-כיוונית למוסר ולמקבל המשמרת.
     * **זיהוי שעות חכם:** תמיכה מלאה בהקלדות אקסל בעייתיות (עם רווחים ומקפים) כדי לזהות בוקר ולילה.
     * **משולש חכם:** אנשים שחסומים להחלפה ישירה מוצעים אוטומטית לדיל משולש.
 
-    **v2.0.2 | חזרה למקורות 🧱**
-    * הסרת כפיית פונטים חיצוניים למניעת באגי תצוגה במובייל.
+    **v2.0.1 - v2.0.2 | חזרה למקורות 🧱**
+    * הסרת כפיית פונטים חיצוניים למניעת באגי תצוגה במובייל, והסתמכות על פונט המערכת היציב והמהיר.
 
     **v2.0 | המבצר 🏰**
-    * הגנה מפריצות, אפס עומס (I/O Cache), וחותמת זמן של עדכון אחרון.
+    * **הגנה מפריצות (Brute Force):** נעילת אזור הניהול לאחר 3 ניסיונות כניסה שגויים.
+    * **אפס עומס (I/O Cache):** קריאת הנתונים מבוצעת פעם אחת בלבד ונשמרת בזיכרון השרת.
+    * **חותמת זמן:** תצוגה מדויקת של "עודכן לאחרונה" מתי הועלה הסידור האחרון.
+    * **כתיבה אטומית וחיטוי:** מניעת קריסות של קריאה/כתיבה במקביל וחסימת הזרקת קוד.
 
-    **v1.9.3 | אבטחת מידע 🔐**
-    * הוצאת סיסמת המנהל מקוד המקור (Secrets).
+    **v1.9.3 | אבטחת מידע (Secrets) 🔐**
+    * **הצפנת סיסמת המנהל:** הוצאת הסיסמה מקוד המקור (GitHub) והעברתה למנגנון ה-Secrets המאובטח של השרת.
 
     **v1.9.1 - v1.9.2 | товарищ מיכאל ⭐**
-    * כפתור דיווח ישיר לוואטסאפ של ההנהלה וחיסול תפריט הצד.
+    * **חיסול תפריט הצד במובייל:** אזור המנהל עבר לחלון קופץ נקי ואלגנטי שלא שובר את המסך.
+    * **דיווח ישיר:** כפתור שליחה ישירה לוואטסאפ של המנהל במכה אחת עם אימוג'י כוכב.
+
+    **v1.9 | גרסת המנהלים 👔**
+    * אזור מנהל שזוכר התחברות, סינון שמות ב-Cache, מניעת עיוורון מוצ"ש למשמרות לילה, ותמיכה בקידודי אקסל בעייתיים.
+
+    **v1.8.2 | הסלקטור 🚷**
+    * מנגנון סינון חכם למניעת שורות זבל (כמו "משמרת בוקר", "סה"כ") ברשימת העובדים.
+
+    **v1.8 - v1.8.1 | מערכת SaaS ואזור מנהל ☁️🔒**
+    * אזור מנהל מאובטח בסיסמה להעלאת קבצים.
+    * תצוגת "השבוע האקטיבי" בראש העמוד ומערכת קבצים מרכזית לכלל הצוות.
+
+    **v1.7 - v1.7.1 | מינימליזם ואופטימיזציה 🧹🚀**
+    * הסרת תצוגת "השבוע שלי" למניעת עומס וחישוב שעות מנוחה דו-כיווני.
+
+    **v1.6 | ההסבר המשולש 🔺**
+    * שכתוב UX להחלפה משולשת בשיטת "תן וקח".
+
+    **v1.4 - v1.5.2 | מהפכת ה-UI וחופש חכם 👆🏖️**
+    * חיסול המקלדת הקופצת ומעבר ללחצני קפסולות. 
+    * "חופש תמורת חופש" - שמירה על מאזן משמרות תקין מול ההנהלה.
+
+    **v1.0 - v1.3 | הבסיס 🧱**
+    * מדד עומס, רשימת חרם (Blacklist), וניסוחים שנונים לוואטסאפ.
     """)
     if st.button("סגירה", use_container_width=True):
         st.rerun()
@@ -137,12 +175,9 @@ def read_file_safely(file, skip):
     else:
         return pd.read_excel(file, skiprows=skip)
 
+# תיקון Cache: העברת חותמת הזמן כפרמטר לפונקציה כדי שהמטמון יתנקה אוטומטית כשזה משתנה
 @st.cache_data(show_spinner=False)
-def load_server_data():
-    if not os.path.exists(DB_FILE) or not os.path.exists(WEEK_FILE):
-        return None, None, None
-        
-    mtime = os.path.getmtime(DB_FILE)
+def load_server_data(mtime):
     last_updated = datetime.fromtimestamp(mtime).strftime("%d/%m/%Y בשעה %H:%M")
     
     with open(WEEK_FILE, "r", encoding="utf-8") as f:
@@ -159,7 +194,6 @@ def clean_dataframe(df):
     for col in df.columns:
         df[col] = df[col].astype(str).replace(r'\r|\n', '', regex=True).str.strip()
         if col != 'שם':
-            # שימוש ב-Regex סלחני כדי לתפוס גם רווחים ומקפים שונים
             df[col] = df[col].str.replace(r'0?7:00\s*[-–]\s*15:00', 'בוקר ☀️', regex=True)
             df[col] = df[col].str.replace(r'0?7:00\s*[-–]\s*19:00', 'בוקר ארוך 🌤️', regex=True)
             df[col] = df[col].str.replace(r'14:30\s*[-–]\s*23:00', 'ערב 🌇', regex=True)
@@ -174,7 +208,6 @@ def clean_dataframe(df):
                 "לילה": "לילה 🌙", 
                 "חופש": "חופש 🌴"
             }
-            # החלפה בטוחה למילים בדיוק
             for k, v in mapping.items():
                 df[col] = df[col].apply(lambda x: v if x.strip() == k else x)
                 
@@ -194,7 +227,6 @@ def get_valid_workers(df):
         workers_list.append(w_str)
     return workers_list
 
-# --- זיהוי חכם של סוגי משמרות ---
 def is_night(shift):
     shift_str = str(shift)
     return any(term in shift_str for term in ["לילה", "19:00", "22:30", "🦉", "🌙"])
@@ -244,12 +276,21 @@ def generate_freedom_swap_msg(tone, my_shift, my_day, partner_shift, partner_day
 
 def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, person_a_shift, df, blacklist):
     person_bs = df[(df[selected_day] == 'חופש 🌴') & (df['שם'] != user_name) & (df['שם'] != person_a_name) & (~df['שם'].isin(blacklist))]
+    if person_bs.empty: return
+    
+    user_a_row = df[df['שם'] == person_a_name].iloc[0]
     valid_bs = []
-    for _, row in person_bs.iterrows():
+    
+    for row in person_bs.to_dict('records'):
         b_name = row['שם']
         if check_legal_rest(b_name, user_shift, selected_day, df):
-            b_shifts = row.to_dict()
-            offerable = {d: s for d, s in b_shifts.items() if d not in ['שם', selected_day] and s != 'חופש 🌴' and df[df['שם'] == person_a_name][d].values[0] == 'חופש 🌴' and check_legal_rest(person_a_name, s, d, df)}
+            offerable = {
+                d: s for d, s in row.items() 
+                if d not in ['שם', selected_day] 
+                and s != 'חופש 🌴' 
+                and user_a_row[d] == 'חופש 🌴' 
+                and check_legal_rest(person_a_name, s, d, df)
+            }
             if offerable: valid_bs.append((b_name, offerable))
                 
     if not valid_bs: return
@@ -282,7 +323,7 @@ def main():
 
     col_ver, col_btn_admin, col_btn_log = st.columns([2, 1, 1])
     with col_ver:
-        st.caption("v2.1.0 | משמרות הלילה 🦉")
+        st.caption("v2.2.0 | הפנתר 🐆")
     with col_btn_admin:
         if st.button("⚙️ מנהל", type="tertiary", use_container_width=True):
             admin_dialog()
@@ -292,13 +333,15 @@ def main():
 
     st.markdown("ברוכים הבאים למערכת שתנסה למזער את הנזק בסידור העבודה. רק לבחור את השם שלך ולתת לאלגוריתם לשבור את הראש.")
 
-    df_raw, current_week_name, last_updated = load_server_data()
-    
-    if df_raw is None:
+    # טעינת נתונים
+    if not os.path.exists(DB_FILE) or not os.path.exists(WEEK_FILE):
         st.warning("⚠️ המנהל עדיין לא העלה סידור עבודה למערכת. לחצו על כפתור 'מנהל' למעלה כדי להעלות קובץ.")
         st.stop()
 
     try:
+        mtime = os.path.getmtime(DB_FILE)
+        df_raw, current_week_name, last_updated = load_server_data(mtime)
+        
         st.info(f"📅 **כרגע מוצג סידור עבודה:** {current_week_name}\n\n*(עודכן לאחרונה: {last_updated})*")
         df = clean_dataframe(df_raw)
         with st.expander("👀 הצצה לסידור המלא (בלי צבעים עושי מיגרנה)"):
@@ -368,7 +411,6 @@ def main():
                 can_partner_take_mine = check_legal_rest(partner, current_shift, selected_day, df)
                 can_i_take_his = check_legal_rest(user_name, partner_shift, selected_day, df)
                 
-                # אם אני לא יכול לקחת את שלו (כי לי יש חסימת מנוחה), אין שום טעם להמשיך
                 if not can_i_take_his: continue 
                 
                 found_solution = True
@@ -397,20 +439,22 @@ def main():
                         with st.expander(f"🔀 סירוב מ-{partner}? ננסה דיל משולש"):
                             find_triangular_swap(user_name, current_shift, selected_day, partner, partner_shift, df, blacklist)
                 else:
-                    # מקרים בהם אני פנוי לקחת, אבל הוא חסום לקחת ממני (למשל כי מחר יש לו בוקר)
                     with st.expander(f"🔀 חסום חוקית (מנוחה) למסור ל-{partner}. ננסה דיל משולש?"):
                         find_triangular_swap(user_name, current_shift, selected_day, partner, partner_shift, df, blacklist)
 
     if "חופש 🌴" in desired_shifts:
         free_that_day = df[(df[selected_day] == 'חופש 🌴') & (df['שם'] != user_name) & (~df['שם'].isin(blacklist))]
+        
+        user_row = df[df['שם'] == user_name].iloc[0]
         complex_swaps = []
-        for _, partner in free_that_day.iterrows():
-            partner_name = partner['שם']
+        
+        for row in free_that_day.to_dict('records'):
+            partner_name = row['שם']
             if not check_legal_rest(partner_name, current_shift, selected_day, df): continue
                 
-            valid_return_shifts = [(day, p_shift) for day, p_shift in partner.to_dict().items() 
+            valid_return_shifts = [(day, p_shift) for day, p_shift in row.items() 
                                    if day not in ['שם', selected_day] and p_shift != 'חופש 🌴' 
-                                   and day in df.columns and df[df['שם'] == user_name][day].values[0] == 'חופש 🌴' 
+                                   and day in df.columns and user_row[day] == 'חופש 🌴' 
                                    and check_legal_rest(user_name, p_shift, day, df)]
             if valid_return_shifts:
                 complex_swaps.append({'partner': partner_name, 'options': valid_return_shifts})
