@@ -37,18 +37,22 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- חלון קופץ: אזור מנהל אלגנטי (מחליף את תפריט הצד!) ---
+# --- חלון קופץ: אזור מנהל אלגנטי ---
 @st.dialog("⚙️ אזור מנהל (למורשים בלבד)")
 def admin_dialog():
     if not st.session_state.admin_logged_in:
         st.markdown("רק מנהל המערכת מורשה להעלות סידור עבודה חדש.")
         admin_pass = st.text_input("סיסמת גישה", type="password", placeholder="🍕 הקלד סיסמה...")
         
-        if admin_pass == "PINKPIZZA":
+        # 🔒 התיקון הקריטי: שאיבת הסיסמה מהכספת של Streamlit במקום טקסט גלוי!
+        # אם לא הגדרת את הסוד בשרת, הוא ינסה להשוות למחרוזת שגיאה כדי לא לאפשר כניסה
+        correct_password = st.secrets.get("ADMIN_PASSWORD", "PASSWORD_NOT_SET_IN_SECRETS")
+        
+        if admin_pass == correct_password and admin_pass != "PASSWORD_NOT_SET_IN_SECRETS":
             st.session_state.admin_logged_in = True
             st.rerun()
         elif admin_pass != "":
-            st.error("סיסמה שגויה. נסה שוב.")
+            st.error("סיסמה שגויה (או שהכספת ב-Streamlit לא מוגדרת!). נסה שוב.")
             
     if st.session_state.admin_logged_in:
         st.success("מחובר כמנהל המערכת!")
@@ -79,9 +83,12 @@ def admin_dialog():
 @st.dialog("📜 יומן שינויים - היסטוריית הפיתוח")
 def show_changelog():
     st.markdown("""
-    **v1.9.1 | товарищ מיכאל ⚒**
-    * **חיסול תפריט הצד במובייל:** אזור המנהל עבר לחלון קופץ נקי ואלגנטי שלא שובר את המסך.
-    * **דיווח ישיר:** כפתור שליחה ישירה לוואטסאפ של מיכאל במכה אחת, בלי חלוניות ביניים מיותרות.
+    **v1.9.3 | אבטחת מידע (Secrets) 🔐**
+    * **הצפנת סיסמת המנהל:** הוצאת הסיסמה מקוד המקור (GitHub) והעברתה למנגנון ה-Secrets המאובטח של השרת.
+
+    **v1.9.1 - v1.9.2 | товарищ מיכאל ⭐**
+    * חיסול תפריט הצד במובייל ומעבר לחלון קופץ נקי.
+    * דיווח ישיר לוואטסאפ של המנהל במכה אחת עם אימוג'י מעודכן.
 
     **v1.9 | גרסת המנהלים 👔**
     * אזור מנהל שזוכר התחברות, סינון שמות ב-Cache, מניעת עיוורון מוצ"ש למשמרות לילה, ותמיכה בקידודי אקסל בעייתיים.
@@ -239,7 +246,7 @@ def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, per
                 with col_hr:
                     hr_msg = f"היי מיכאל, מבקש/ת לעדכן על החלפת משמרות משולשת:\n- {user_name} יעשה את {person_a_shift} ב{selected_day} (במקום {person_a_name}).\n- {b_name} יעשה את {user_shift} ב{selected_day} (במקום {user_name}).\n- {person_a_name} יעשה את {s} ב{d} (במקום {b_name}).\n\nתודה מראש!"
                     hr_url = f"https://wa.me/{MANAGER_PHONE}?text={urllib.parse.quote(hr_msg)}"
-                    st.link_button("שלח הודעה ל-товарищ מיכאל ⚒", hr_url, use_container_width=True)
+                    st.link_button("שלח הודעה ל-товарищ מיכאל ⭐", hr_url, use_container_width=True)
 
 def main():
     st.title("מערכת חילופי משמרות 🔄")
@@ -248,10 +255,10 @@ def main():
     if "admin_logged_in" not in st.session_state:
         st.session_state.admin_logged_in = False
 
-    # כפתורי עליון - הוספנו כפתור לאזור מנהל במקום תפריט צד!
+    # כפתורי עליון
     col_ver, col_btn_admin, col_btn_log = st.columns([2, 1, 1])
     with col_ver:
-        st.caption("v1.9.1 | מבצע מיכאל ⚒")
+        st.caption("v1.9.3 | אבטחת מידע 🔐")
     with col_btn_admin:
         if st.button("⚙️ מנהל", type="tertiary", use_container_width=True):
             admin_dialog()
@@ -363,7 +370,7 @@ def main():
                     with col_hr:
                         hr_msg = f"היי מיכאל, מבקש/ת לעדכן על החלפת משמרות ב{selected_day}:\n- {user_name} יעשה את {partner_shift}.\n- {partner} יעשה את {current_shift}."
                         hr_url = f"https://wa.me/{MANAGER_PHONE}?text={urllib.parse.quote(hr_msg)}"
-                        st.link_button("שלח הודעה ל-товарищ מיכאל ⚒", hr_url, use_container_width=True)
+                        st.link_button("שלח הודעה ל-товарищ מיכאל ⭐", hr_url, use_container_width=True)
                             
                     with st.expander(f"🔀 סירוב מ-{partner}? ננסה דיל משולש"):
                         find_triangular_swap(user_name, current_shift, selected_day, partner, partner_shift, df, blacklist)
@@ -411,7 +418,7 @@ def main():
                     with col_hr:
                         hr_msg = f"היי מיכאל, מבקש/ת לעדכן על החלפת משמרות להזזת יום חופש:\n- {user_name} יעשה את {partner_shift} ב{partner_day}.\n- {partner_name} יעשה את {current_shift} ב{selected_day}."
                         hr_url = f"https://wa.me/{MANAGER_PHONE}?text={urllib.parse.quote(hr_msg)}"
-                        st.link_button("שלח הודעה ל-товарищ מיכאל ⚒", hr_url, use_container_width=True)
+                        st.link_button("שלח הודעה ל-товарищ מיכאל ⭐", hr_url, use_container_width=True)
 
     if not found_solution:
         st.error("האלגוריתם ירק דם אבל אין אף פראייר פנוי השבוע. קח נשימה עמוקה ולך להכין קפה שחור. ☕💀")
