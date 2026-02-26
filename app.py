@@ -1,4 +1,4 @@
- import streamlit as st
+import streamlit as st
 import pandas as pd
 import urllib.parse
 
@@ -452,4 +452,5 @@ if __name__ == "__main__":
         except Exception as e: st.error(f"שגיאה בקובץ: {e}")
 
 if __name__ == "__main__": main()
+
 
