@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 import urllib.parse
 import os
+import time
+from datetime import datetime
+import html
 
 # הגדרת שעות המשמרות 
 SHIFT_TYPES = {
@@ -20,10 +23,15 @@ WEEK_FILE = "week_name.txt"
 
 st.set_page_config(page_title="בורח ממשמרות - גרסת ה-VIP", page_icon="🏃‍♂️", layout="centered")
 
-# --- הזרקת CSS מיוחדת למובייל ---
+# --- הזרקת CSS מיוחדת למובייל + פונט Assistant מ-Google Fonts ---
 st.markdown("""
 <style>
-    .stApp { direction: rtl; }
+    @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;800&display=swap');
+    
+    html, body, [class*="css"], .stApp { 
+        font-family: 'Assistant', sans-serif !important; 
+        direction: rtl; 
+    }
     p, div, h1, h2, h3, h4, h5, h6, label, span, li { text-align: right !important; }
     .block-container { padding-bottom: 350px !important; }
     [data-testid="stDataFrame"] { direction: rtl; }
@@ -37,22 +45,36 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- חלון קופץ: אזור מנהל אלגנטי ---
+# --- חלון קופץ: אזור מנהל מאובטח ---
 @st.dialog("⚙️ אזור מנהל (למורשים בלבד)")
 def admin_dialog():
+    # הגנת Brute Force
+    if "failed_attempts" not in st.session_state: st.session_state.failed_attempts = 0
+    if "lockout_time" not in st.session_state: st.session_state.lockout_time = 0
+
+    if time.time() < st.session_state.lockout_time:
+        remaining = int(st.session_state.lockout_time - time.time())
+        st.error(f"🚨 המערכת נעולה עקב ניסיונות מרובים. נסה שוב בעוד {remaining} שניות.")
+        return
+
     if not st.session_state.admin_logged_in:
         st.markdown("רק מנהל המערכת מורשה להעלות סידור עבודה חדש.")
         admin_pass = st.text_input("סיסמת גישה", type="password", placeholder="🍕 הקלד סיסמה...")
         
-        # 🔒 התיקון הקריטי: שאיבת הסיסמה מהכספת של Streamlit במקום טקסט גלוי!
-        # אם לא הגדרת את הסוד בשרת, הוא ינסה להשוות למחרוזת שגיאה כדי לא לאפשר כניסה
         correct_password = st.secrets.get("ADMIN_PASSWORD", "PASSWORD_NOT_SET_IN_SECRETS")
         
-        if admin_pass == correct_password and admin_pass != "PASSWORD_NOT_SET_IN_SECRETS":
-            st.session_state.admin_logged_in = True
-            st.rerun()
-        elif admin_pass != "":
-            st.error("סיסמה שגויה (או שהכספת ב-Streamlit לא מוגדרת!). נסה שוב.")
+        if st.button("התחבר", use_container_width=True):
+            if admin_pass == correct_password and admin_pass != "PASSWORD_NOT_SET_IN_SECRETS":
+                st.session_state.admin_logged_in = True
+                st.session_state.failed_attempts = 0 # איפוס ניסיונות
+                st.rerun()
+            elif admin_pass != "":
+                st.session_state.failed_attempts += 1
+                if st.session_state.failed_attempts >= 3:
+                    st.session_state.lockout_time = time.time() + 60 # נעילה ל-60 שניות
+                    st.error("יותר מדי ניסיונות שגויים. המערכת ננעלה לדקה.")
+                else:
+                    st.error(f"סיסמה שגויה. נותרו לך עוד {3 - st.session_state.failed_attempts} ניסיונות.")
             
     if st.session_state.admin_logged_in:
         st.success("מחובר כמנהל המערכת!")
@@ -63,12 +85,23 @@ def admin_dialog():
         if st.button("💾 שמור סידור עבודה בשרת", type="primary", use_container_width=True):
             if uploaded_file and week_name:
                 try:
+                    # חיטוי טקסט למניעת הזרקת קוד
+                    safe_week_name = html.escape(week_name)
                     df_temp = read_file_safely(uploaded_file, rows_to_skip)
-                    df_temp.to_csv(DB_FILE, index=False)
-                    with open(WEEK_FILE, "w", encoding="utf-8") as f:
-                        f.write(week_name)
+                    
+                    # כתיבה אטומית למניעת Race Conditions
+                    temp_csv = "temp_" + DB_FILE
+                    temp_txt = "temp_" + WEEK_FILE
+                    
+                    df_temp.to_csv(temp_csv, index=False)
+                    with open(temp_txt, "w", encoding="utf-8") as f:
+                        f.write(safe_week_name)
+                        
+                    os.replace(temp_csv, DB_FILE)
+                    os.replace(temp_txt, WEEK_FILE)
+                    
                     st.success("הסידור נשמר בשרת בהצלחה! כל הצוות יראה אותו עכשיו.")
-                    st.cache_data.clear() 
+                    st.cache_data.clear() # ניקוי המטמון כדי שהמשתמשים יראו מיד את הקובץ החדש
                     st.rerun()
                 except Exception as e:
                     st.error(f"שגיאה בשמירת הקובץ: {e}")
@@ -83,30 +116,31 @@ def admin_dialog():
 @st.dialog("📜 יומן שינויים - היסטוריית הפיתוח")
 def show_changelog():
     st.markdown("""
+    **v2.0 | המבצר 🏰**
+    * **טיפוגרפיה:** הזרקת פונט 'Assistant' מ-Google Fonts לחוויית קריאה חלקה יותר.
+    * **הגנה מפריצות (Brute Force):** נעילת אזור הניהול לאחר 3 ניסיונות כניסה שגויים.
+    * **אפס עומס (I/O Cache):** קריאת הנתונים מבוצעת פעם אחת בלבד ונשמרת בזיכרון השרת, מה שמאיץ את האפליקציה משמעותית.
+    * **חותמת זמן:** תצוגה מדויקת של "עודכן לאחרונה" מתי הועלה הסידור האחרון.
+    * **כתיבה אטומית וחיטוי:** מניעת קריסות של קריאה/כתיבה במקביל וחסימת הזרקת קוד.
+
     **v1.9.3 | אבטחת מידע (Secrets) 🔐**
-    * **הצפנת סיסמת המנהל:** הוצאת הסיסמה מקוד המקור (GitHub) והעברתה למנגנון ה-Secrets המאובטח של השרת.
+    * הוצאת סיסמת המנהל מקוד המקור והעברתה לשרת ה-Secrets של Streamlit.
 
     **v1.9.1 - v1.9.2 | товарищ מיכאל ⭐**
     * חיסול תפריט הצד במובייל ומעבר לחלון קופץ נקי.
-    * דיווח ישיר לוואטסאפ של המנהל במכה אחת עם אימוג'י מעודכן.
+    * דיווח ישיר לוואטסאפ של המנהל במכה אחת עם אימוג'י כוכב.
 
     **v1.9 | גרסת המנהלים 👔**
-    * אזור מנהל שזוכר התחברות, סינון שמות ב-Cache, מניעת עיוורון מוצ"ש למשמרות לילה, ותמיכה בקידודי אקסל בעייתיים.
+    * אזור מנהל שזוכר התחברות, סינון שמות ב-Cache, ומניעת עיוורון מוצ"ש.
 
     **v1.8.2 | הסלקטור 🚷**
-    * מנגנון סינון חכם למניעת שורות זבל (כמו "משמרת בוקר", "סה"כ") ברשימת העובדים.
+    * סינון חכם למניעת שורות זבל ברשימת העובדים.
 
-    **v1.8 | מערכת SaaS ואזור מנהל ☁️🔒**
-    * שמירה בשרת המרכזי שזמין לכל חברי הצוות בלייב, ותצוגת שבוע אקטיבי.
+    **v1.8 | מערכת SaaS ☁️**
+    * שמירה בשרת המרכזי שזמין לכל חברי הצוות בלייב.
 
-    **v1.7 | מינימליזם ואופטימיזציה 🧹🚀**
-    * בדיקת שעות מנוחה קדימה ואחורה למניעת חריגות חוקיות.
-
-    **v1.6 | ההסבר המשולש 🔺**
-    * שכתוב UX להחלפה משולשת בשיטת "תן וקח".
-
-    **v1.4 - v1.5.2 | מהפכת ה-UI וחופש חכם 👆🏖️**
-    * חיסול המקלדת הקופצת ומעבר ללחצני קפסולות. 
+    **v1.0 - v1.7 | היסטוריית פיתוח מוקדמת 🧱**
+    * דילים חכמים, החלפות משולשות בשיטת שרשרת, בדיקת חוקי מנוחה, ומעבר לממשק נטול-מקלדת.
     """)
     if st.button("סגירה", use_container_width=True):
         st.rerun()
@@ -118,7 +152,6 @@ def edit_and_send_dialog(default_msg):
     url = f"https://wa.me/?text={urllib.parse.quote(edited_msg)}"
     st.link_button("🚀 פתיחת וואטסאפ ושליחה", url, use_container_width=True)
 
-# קריאת קבצים בטוחה
 def read_file_safely(file, skip):
     if file.name.endswith('csv'):
         for enc in ['utf-8', 'cp1255', 'iso-8859-8']:
@@ -130,6 +163,22 @@ def read_file_safely(file, skip):
         raise ValueError("שגיאת קידוד: הקובץ חייב להיות תקין בעברית.")
     else:
         return pd.read_excel(file, skiprows=skip)
+
+# קריאה חכמה של הנתונים פעם אחת בלבד מהדיסק (I/O Optimization)
+@st.cache_data(show_spinner=False)
+def load_server_data():
+    if not os.path.exists(DB_FILE) or not os.path.exists(WEEK_FILE):
+        return None, None, None
+        
+    # שליפת זמן העדכון של הקובץ מהדיסק
+    mtime = os.path.getmtime(DB_FILE)
+    last_updated = datetime.fromtimestamp(mtime).strftime("%d/%m/%Y בשעה %H:%M")
+    
+    with open(WEEK_FILE, "r", encoding="utf-8") as f:
+        current_week_name = f.read()
+        
+    df_raw = pd.read_csv(DB_FILE)
+    return df_raw, current_week_name, last_updated
 
 @st.cache_data
 def clean_dataframe(df):
@@ -258,7 +307,7 @@ def main():
     # כפתורי עליון
     col_ver, col_btn_admin, col_btn_log = st.columns([2, 1, 1])
     with col_ver:
-        st.caption("v1.9.3 | אבטחת מידע 🔐")
+        st.caption("v2.0 | גרסת המבצר 🏰")
     with col_btn_admin:
         if st.button("⚙️ מנהל", type="tertiary", use_container_width=True):
             admin_dialog()
@@ -268,23 +317,22 @@ def main():
 
     st.markdown("ברוכים הבאים למערכת שתנסה למזער את הנזק בסידור העבודה. רק לבחור את השם שלך ולתת לאלגוריתם לשבור את הראש.")
 
-    # --- טעינה מהשרת ---
-    if not os.path.exists(DB_FILE) or not os.path.exists(WEEK_FILE):
+    # --- טעינה אופטימלית מהשרת (זיכרון מטמון) ---
+    df_raw, current_week_name, last_updated = load_server_data()
+    
+    if df_raw is None:
         st.warning("⚠️ המנהל עדיין לא העלה סידור עבודה למערכת. לחצו על כפתור 'מנהל' למעלה כדי להעלות קובץ.")
         st.stop()
 
     try:
-        with open(WEEK_FILE, "r", encoding="utf-8") as f:
-            current_week_name = f.read()
-        st.info(f"📅 **כרגע מוצג סידור עבודה:** {current_week_name}")
+        st.info(f"📅 **כרגע מוצג סידור עבודה:** {current_week_name}\n\n*(עודכן לאחרונה: {last_updated})*")
         
-        df_raw = pd.read_csv(DB_FILE)
         df = clean_dataframe(df_raw)
         
         with st.expander("👀 הצצה לסידור המלא (בלי צבעים עושי מיגרנה)"):
             st.dataframe(df, use_container_width=True)
     except Exception as e:
-        st.error(f"שגיאה בטעינת הקובץ מהשרת: {e}")
+        st.error(f"שגיאה בטעינת הקובץ: {e}")
         st.stop()
 
     st.divider()
