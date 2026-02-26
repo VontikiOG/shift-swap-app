@@ -5,25 +5,16 @@ import os
 import time
 from datetime import datetime
 import html
+import re
 
-# הגדרת שעות המשמרות 
-SHIFT_TYPES = {
-    "בוקר ☀️": "07:00-15:00",
-    "בוקר ארוך 🌤️": "07:00-19:00",
-    "ערב 🌇": "14:30-23:00",
-    "לילה ארוך 🦉": "19:00-07:00",
-    "לילה 🌙": "22:30-07:00",
-    "חופש 🌴": "חופש"
-}
-
-# מספרי טלפון וקבצי שרת
+# קבצי שרת וטלפונים
 MANAGER_PHONE = "972503068808"
 DB_FILE = "schedule.csv"
 WEEK_FILE = "week_name.txt"
 
 st.set_page_config(page_title="בורח ממשמרות - גרסת ה-VIP", page_icon="🏃‍♂️", layout="centered")
 
-# --- הזרקת CSS מיוחדת למובייל (ללא פונטים חיצוניים!) ---
+# --- הזרקת CSS ---
 st.markdown("""
 <style>
     .stApp { direction: rtl; }
@@ -31,7 +22,6 @@ st.markdown("""
     .block-container { padding-bottom: 350px !important; }
     [data-testid="stDataFrame"] { direction: rtl; }
     div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] { gap: 0.5rem; }
-    
     @media (max-width: 768px) {
         .block-container { padding-top: 1.5rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
         h1 { font-size: 1.8rem !important; }
@@ -104,34 +94,26 @@ def admin_dialog():
             st.session_state.admin_logged_in = False
             st.rerun()
 
-# --- חלון קופץ: יומן שינויים (Changelog) ---
+# --- חלון קופץ: יומן שינויים ---
 @st.dialog("📜 יומן שינויים - היסטוריית הפיתוח")
 def show_changelog():
     st.markdown("""
+    **v2.1.0 | משמרות הלילה 🦉**
+    * **תיקון קריטי לחוקי מנוחה:** בדיקה דו-כיוונית למוסר ולמקבל המשמרת.
+    * **זיהוי שעות חכם:** תמיכה מלאה בהקלדות אקסל בעייתיות (עם רווחים ומקפים) כדי לזהות בוקר ולילה.
+    * **משולש חכם:** אנשים שחסומים להחלפה ישירה מוצעים אוטומטית לדיל משולש.
+
     **v2.0.2 | חזרה למקורות 🧱**
-    * הסרת כפיית פונטים חיצוניים למניעת באגי תצוגה במובייל, והסתמכות על פונט המערכת היציב והמהיר.
+    * הסרת כפיית פונטים חיצוניים למניעת באגי תצוגה במובייל.
 
     **v2.0 | המבצר 🏰**
-    * **הגנה מפריצות (Brute Force):** נעילת אזור הניהול לאחר 3 ניסיונות כניסה שגויים.
-    * **אפס עומס (I/O Cache):** קריאת הנתונים מבוצעת פעם אחת בלבד ונשמרת בזיכרון השרת.
-    * **חותמת זמן:** תצוגה מדויקת של "עודכן לאחרונה".
-    * **כתיבה אטומית וחיטוי:** מניעת קריסות של קריאה/כתיבה במקביל וחסימת הזרקת קוד.
+    * הגנה מפריצות, אפס עומס (I/O Cache), וחותמת זמן של עדכון אחרון.
 
-    **v1.9.3 | אבטחת מידע (Secrets) 🔐**
-    * הוצאת סיסמת המנהל מקוד המקור והעברתה לשרת ה-Secrets של Streamlit.
+    **v1.9.3 | אבטחת מידע 🔐**
+    * הוצאת סיסמת המנהל מקוד המקור (Secrets).
 
     **v1.9.1 - v1.9.2 | товарищ מיכאל ⭐**
-    * חיסול תפריט הצד במובייל ומעבר לחלון קופץ נקי.
-    * דיווח ישיר לוואטסאפ של המנהל במכה אחת עם אימוג'י כוכב.
-
-    **v1.9 | גרסת המנהלים 👔**
-    * אזור מנהל, סינון שמות ב-Cache, ומניעת עיוורון מוצ"ש למשמרות לילה.
-
-    **v1.8 - v1.8.2 | מערכת SaaS והסלקטור ☁️🚷**
-    * שמירה בשרת המרכזי שזמין לכל חברי הצוות בלייב וסינון חכם למניעת שורות זבל.
-
-    **v1.0 - v1.7 | היסטוריית פיתוח מוקדמת 🧱**
-    * דילים חכמים, החלפות משולשות, בדיקת חוקי מנוחה, ומעבר לממשק נטול-מקלדת.
+    * כפתור דיווח ישיר לוואטסאפ של ההנהלה וחיסול תפריט הצד.
     """)
     if st.button("סגירה", use_container_width=True):
         st.rerun()
@@ -174,26 +156,27 @@ def clean_dataframe(df):
     df.columns = df.columns.astype(str).str.strip()
     df = df.drop(columns=['אחוז משרה'], errors='ignore')
     
-    HOURS_TO_NAMES = {
-        "07:00-15:00": "בוקר ☀️", "7:00-15:00": "בוקר ☀️",
-        "07:00-19:00": "בוקר ארוך 🌤️", "7:00-19:00": "בוקר ארוך 🌤️",
-        "14:30-23:00": "ערב 🌇",
-        "19:00-07:00": "לילה ארוך 🦉", "19:00-7:00": "לילה ארוך 🦉",
-        "22:30-07:00": "לילה 🌙", "22:30-7:00": "לילה 🌙"
-    }
-    WORDS_TO_EMOJIS = {
-        "בוקר": "בוקר ☀️", "בוקר ארוך": "בוקר ארוך 🌤️",
-        "ערב": "ערב 🌇", "לילה ארוך": "לילה ארוך 🦉",
-        "לילה": "לילה 🌙", "חופש": "חופש 🌴"
-    }
-    
     for col in df.columns:
         df[col] = df[col].astype(str).replace(r'\r|\n', '', regex=True).str.strip()
         if col != 'שם':
-            df[col] = df[col].str.replace(' ', '', regex=False)
-            for hours, name in HOURS_TO_NAMES.items():
-                df[col] = df[col].replace(hours, name)
-            df[col] = df[col].apply(lambda x: WORDS_TO_EMOJIS.get(x, x))
+            # שימוש ב-Regex סלחני כדי לתפוס גם רווחים ומקפים שונים
+            df[col] = df[col].str.replace(r'0?7:00\s*[-–]\s*15:00', 'בוקר ☀️', regex=True)
+            df[col] = df[col].str.replace(r'0?7:00\s*[-–]\s*19:00', 'בוקר ארוך 🌤️', regex=True)
+            df[col] = df[col].str.replace(r'14:30\s*[-–]\s*23:00', 'ערב 🌇', regex=True)
+            df[col] = df[col].str.replace(r'19:00\s*[-–]\s*0?7:00', 'לילה ארוך 🦉', regex=True)
+            df[col] = df[col].str.replace(r'22:30\s*[-–]\s*0?7:00', 'לילה 🌙', regex=True)
+            
+            mapping = {
+                "בוקר": "בוקר ☀️", 
+                "בוקר ארוך": "בוקר ארוך 🌤️",
+                "ערב": "ערב 🌇", 
+                "לילה ארוך": "לילה ארוך 🦉",
+                "לילה": "לילה 🌙", 
+                "חופש": "חופש 🌴"
+            }
+            # החלפה בטוחה למילים בדיוק
+            for k, v in mapping.items():
+                df[col] = df[col].apply(lambda x: v if x.strip() == k else x)
                 
     df = df.replace(["nan", "None", "", "NaN"], "חופש 🌴")
     df = df.fillna("חופש 🌴")
@@ -204,30 +187,36 @@ def get_valid_workers(df):
     raw_workers_list = df['שם'].unique().tolist()
     forbidden_words = ["בוקר", "ערב", "לילה", "חופש", "משמרת", "סה\"כ", "סהכ", "הערות", "מנהל", "nan", "none"]
     workers_list = []
-    
     for w in raw_workers_list:
         w_str = str(w).strip()
-        if not w_str or w_str.lower() in ["nan", "none"]:
-            continue
-        if any(bad_word in w_str for bad_word in forbidden_words):
-            continue
+        if not w_str or w_str.lower() in ["nan", "none"]: continue
+        if any(bad_word in w_str for bad_word in forbidden_words): continue
         workers_list.append(w_str)
     return workers_list
 
-def check_legal_rest(person_taking_shift, shift_to_take, day_taking, df):
+# --- זיהוי חכם של סוגי משמרות ---
+def is_night(shift):
+    shift_str = str(shift)
+    return any(term in shift_str for term in ["לילה", "19:00", "22:30", "🦉", "🌙"])
+
+def is_morning(shift):
+    shift_str = str(shift)
+    return any(term in shift_str for term in ["בוקר", "7:00", "07:00", "☀️", "🌤️"])
+
+def check_legal_rest(person_name, new_shift, day_taking, df):
     days = [col for col in df.columns if col != 'שם']
     if day_taking not in days: return True
     idx = days.index(day_taking)
     
-    if shift_to_take in ["לילה 🌙", "לילה ארוך 🦉"]:
+    if is_night(new_shift):
         if idx + 1 < len(days):
-            next_shift = df[df['שם'] == person_taking_shift][days[idx+1]].values[0]
-            if next_shift in ["בוקר ☀️", "בוקר ארוך 🌤️"]: return False 
+            next_shift = df[df['שם'] == person_name][days[idx+1]].values[0]
+            if is_morning(next_shift): return False 
                 
-    if shift_to_take in ["בוקר ☀️", "בוקר ארוך 🌤️"]:
+    if is_morning(new_shift):
         if idx - 1 >= 0:
-            prev_shift = df[df['שם'] == person_taking_shift][days[idx-1]].values[0]
-            if prev_shift in ["לילה 🌙", "לילה ארוך 🦉"]: return False
+            prev_shift = df[df['שם'] == person_name][days[idx-1]].values[0]
+            if is_night(prev_shift): return False
                 
     return True
 
@@ -270,7 +259,6 @@ def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, per
         for d, s in shifts.items():
             with st.container(border=True):
                 st.markdown(f"הצעה ל{person_a_name}: משמרת **{s}** ב{d} (של {b_name})")
-                
                 if selected_day == df.columns[-1] and user_shift in ["לילה 🌙", "לילה ארוך 🦉"]:
                     st.warning("⚠️ שימו לב: אתם מקבלים לילה ביום האחרון של הסידור. ודאו שאין לכם משמרת בוקר בשבוע החדש!")
 
@@ -294,7 +282,7 @@ def main():
 
     col_ver, col_btn_admin, col_btn_log = st.columns([2, 1, 1])
     with col_ver:
-        st.caption("v2.0.2 | חזרה למקורות 🧱")
+        st.caption("v2.1.0 | משמרות הלילה 🦉")
     with col_btn_admin:
         if st.button("⚙️ מנהל", type="tertiary", use_container_width=True):
             admin_dialog()
@@ -312,9 +300,7 @@ def main():
 
     try:
         st.info(f"📅 **כרגע מוצג סידור עבודה:** {current_week_name}\n\n*(עודכן לאחרונה: {last_updated})*")
-        
         df = clean_dataframe(df_raw)
-        
         with st.expander("👀 הצצה לסידור המלא (בלי צבעים עושי מיגרנה)"):
             st.dataframe(df, use_container_width=True)
     except Exception as e:
@@ -322,7 +308,6 @@ def main():
         st.stop()
 
     st.divider()
-
     if 'שם' not in df.columns:
         st.error("🚨 קריסה! הקובץ שהועלה פגום (אין עמודה בשם 'שם'). המנהל נדרש להעלות קובץ תקין.")
         st.stop()
@@ -380,32 +365,40 @@ def main():
                 partner = row['שם']
                 partner_shift = row[selected_day]
                 
-                if not check_legal_rest(partner, current_shift, selected_day, df):
-                    continue 
+                can_partner_take_mine = check_legal_rest(partner, current_shift, selected_day, df)
+                can_i_take_his = check_legal_rest(user_name, partner_shift, selected_day, df)
+                
+                # אם אני לא יכול לקחת את שלו (כי לי יש חסימת מנוחה), אין שום טעם להמשיך
+                if not can_i_take_his: continue 
                 
                 found_solution = True
                 workload_text = get_workload_text(partner, df)
                 
-                with st.container(border=True):
-                    st.markdown(f"### 👤 {partner}")
-                    st.caption(f"במשמרת {partner_shift} | {workload_text}")
-                    
-                    if selected_day == df.columns[-1] and partner_shift in ["לילה 🌙", "לילה ארוך 🦉"]:
-                        st.warning("⚠️ שימו לב: אתם לוקחים משמרת לילה ביום האחרון של הסידור. ודאו שאין לכם משמרת בוקר בשבוע החדש!")
+                if can_partner_take_mine:
+                    with st.container(border=True):
+                        st.markdown(f"### 👤 {partner}")
+                        st.caption(f"במשמרת {partner_shift} | {workload_text}")
+                        
+                        if selected_day == df.columns[-1] and partner_shift in ["לילה 🌙", "לילה ארוך 🦉"]:
+                            st.warning("⚠️ שימו לב: אתם לוקחים משמרת לילה ביום האחרון של הסידור. ודאו שאין לכם משמרת בוקר בשבוע החדש!")
 
-                    selected_tone = st.radio("באיזו גישה נתקוף?", tone_options, key=f"tone_{partner}_{selected_day}", horizontal=True)
-                    default_msg = generate_whatsapp_msg(selected_tone, current_shift, partner_shift, selected_day, partner)
-                    
-                    col_btn, col_hr = st.columns(2)
-                    with col_btn:
-                        if st.button("שליחה בוואטסאפ 💬", use_container_width=True, key=f"btn_send_{partner}_{selected_day}"):
-                            edit_and_send_dialog(default_msg)
-                    with col_hr:
-                        hr_msg = f"היי מיכאל, מבקש/ת לעדכן על החלפת משמרות ב{selected_day}:\n- {user_name} יעשה את {partner_shift}.\n- {partner} יעשה את {current_shift}."
-                        hr_url = f"https://wa.me/{MANAGER_PHONE}?text={urllib.parse.quote(hr_msg)}"
-                        st.link_button("שלח הודעה ל-товарищ מיכאל ⭐", hr_url, use_container_width=True)
-                            
-                    with st.expander(f"🔀 סירוב מ-{partner}? ננסה דיל משולש"):
+                        selected_tone = st.radio("באיזו גישה נתקוף?", tone_options, key=f"tone_{partner}_{selected_day}", horizontal=True)
+                        default_msg = generate_whatsapp_msg(selected_tone, current_shift, partner_shift, selected_day, partner)
+                        
+                        col_btn, col_hr = st.columns(2)
+                        with col_btn:
+                            if st.button("שליחה בוואטסאפ 💬", use_container_width=True, key=f"btn_send_{partner}_{selected_day}"):
+                                edit_and_send_dialog(default_msg)
+                        with col_hr:
+                            hr_msg = f"היי מיכאל, מבקש/ת לעדכן על החלפת משמרות ב{selected_day}:\n- {user_name} יעשה את {partner_shift}.\n- {partner} יעשה את {current_shift}."
+                            hr_url = f"https://wa.me/{MANAGER_PHONE}?text={urllib.parse.quote(hr_msg)}"
+                            st.link_button("שלח הודעה ל-товарищ מיכאל ⭐", hr_url, use_container_width=True)
+                                
+                        with st.expander(f"🔀 סירוב מ-{partner}? ננסה דיל משולש"):
+                            find_triangular_swap(user_name, current_shift, selected_day, partner, partner_shift, df, blacklist)
+                else:
+                    # מקרים בהם אני פנוי לקחת, אבל הוא חסום לקחת ממני (למשל כי מחר יש לו בוקר)
+                    with st.expander(f"🔀 חסום חוקית (מנוחה) למסור ל-{partner}. ננסה דיל משולש?"):
                         find_triangular_swap(user_name, current_shift, selected_day, partner, partner_shift, df, blacklist)
 
     if "חופש 🌴" in desired_shifts:
@@ -453,7 +446,7 @@ def main():
                         st.link_button("שלח הודעה ל-товарищ מיכאל ⭐", hr_url, use_container_width=True)
 
     if not found_solution:
-        st.error("האלגוריתם ירק דם אבל אין אף פראייר פנוי השבוע. קח נשימה עמוקה ולך להכין קפה שחור. ☕💀")
+        st.error("האלגוריתם ירק דם אבל אין אף פראייר פנוי השבוע (או שזה נופל על שעות מנוחה). קח נשימה עמוקה ולך להכין קפה שחור. ☕💀")
 
 if __name__ == "__main__":
     main()
