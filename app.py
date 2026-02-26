@@ -23,16 +23,18 @@ WEEK_FILE = "week_name.txt"
 
 st.set_page_config(page_title="בורח ממשמרות - גרסת ה-VIP", page_icon="🏃‍♂️", layout="centered")
 
-# --- הזרקת CSS מיוחדת למובייל + פונט Assistant מ-Google Fonts ---
+# --- הזרקת CSS מיוחדת למובייל + פונט Rubik מ-Google Fonts (שיטת הדחפור) ---
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap');
     
-    html, body, [class*="css"], .stApp { 
-        font-family: 'Assistant', sans-serif !important; 
-        direction: rtl; 
+    /* שיטת הדחפור - מחיל את הפונט על כל אלמנט אפשרי במסך כולל כפתורים, תגיות ותיבות טקסט */
+    * {
+        font-family: 'Rubik', sans-serif !important;
     }
-    p, div, h1, h2, h3, h4, h5, h6, label, span, li { text-align: right !important; }
+    
+    .stApp { direction: rtl; }
+    p, div, h1, h2, h3, h4, h5, h6, label, span, li, button, input, textarea { text-align: right !important; }
     .block-container { padding-bottom: 350px !important; }
     [data-testid="stDataFrame"] { direction: rtl; }
     div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] { gap: 0.5rem; }
@@ -48,7 +50,6 @@ st.markdown("""
 # --- חלון קופץ: אזור מנהל מאובטח ---
 @st.dialog("⚙️ אזור מנהל (למורשים בלבד)")
 def admin_dialog():
-    # הגנת Brute Force
     if "failed_attempts" not in st.session_state: st.session_state.failed_attempts = 0
     if "lockout_time" not in st.session_state: st.session_state.lockout_time = 0
 
@@ -66,12 +67,12 @@ def admin_dialog():
         if st.button("התחבר", use_container_width=True):
             if admin_pass == correct_password and admin_pass != "PASSWORD_NOT_SET_IN_SECRETS":
                 st.session_state.admin_logged_in = True
-                st.session_state.failed_attempts = 0 # איפוס ניסיונות
+                st.session_state.failed_attempts = 0
                 st.rerun()
             elif admin_pass != "":
                 st.session_state.failed_attempts += 1
                 if st.session_state.failed_attempts >= 3:
-                    st.session_state.lockout_time = time.time() + 60 # נעילה ל-60 שניות
+                    st.session_state.lockout_time = time.time() + 60
                     st.error("יותר מדי ניסיונות שגויים. המערכת ננעלה לדקה.")
                 else:
                     st.error(f"סיסמה שגויה. נותרו לך עוד {3 - st.session_state.failed_attempts} ניסיונות.")
@@ -85,11 +86,9 @@ def admin_dialog():
         if st.button("💾 שמור סידור עבודה בשרת", type="primary", use_container_width=True):
             if uploaded_file and week_name:
                 try:
-                    # חיטוי טקסט למניעת הזרקת קוד
                     safe_week_name = html.escape(week_name)
                     df_temp = read_file_safely(uploaded_file, rows_to_skip)
                     
-                    # כתיבה אטומית למניעת Race Conditions
                     temp_csv = "temp_" + DB_FILE
                     temp_txt = "temp_" + WEEK_FILE
                     
@@ -101,7 +100,7 @@ def admin_dialog():
                     os.replace(temp_txt, WEEK_FILE)
                     
                     st.success("הסידור נשמר בשרת בהצלחה! כל הצוות יראה אותו עכשיו.")
-                    st.cache_data.clear() # ניקוי המטמון כדי שהמשתמשים יראו מיד את הקובץ החדש
+                    st.cache_data.clear() 
                     st.rerun()
                 except Exception as e:
                     st.error(f"שגיאה בשמירת הקובץ: {e}")
@@ -116,31 +115,29 @@ def admin_dialog():
 @st.dialog("📜 יומן שינויים - היסטוריית הפיתוח")
 def show_changelog():
     st.markdown("""
+    **v2.0.1 | שיטת הדחפור 🚜**
+    * החלפת הפונט ל-Rubik ואכיפה אגרסיבית ב-CSS כדי להתגבר על מערכות הפעלה עקשניות במובייל.
+
     **v2.0 | המבצר 🏰**
-    * **טיפוגרפיה:** הזרקת פונט 'Assistant' מ-Google Fonts לחוויית קריאה חלקה יותר.
     * **הגנה מפריצות (Brute Force):** נעילת אזור הניהול לאחר 3 ניסיונות כניסה שגויים.
-    * **אפס עומס (I/O Cache):** קריאת הנתונים מבוצעת פעם אחת בלבד ונשמרת בזיכרון השרת, מה שמאיץ את האפליקציה משמעותית.
-    * **חותמת זמן:** תצוגה מדויקת של "עודכן לאחרונה" מתי הועלה הסידור האחרון.
+    * **אפס עומס (I/O Cache):** קריאת הנתונים מבוצעת פעם אחת בלבד ונשמרת בזיכרון השרת.
+    * **חותמת זמן:** תצוגה מדויקת של "עודכן לאחרונה".
     * **כתיבה אטומית וחיטוי:** מניעת קריסות של קריאה/כתיבה במקביל וחסימת הזרקת קוד.
 
     **v1.9.3 | אבטחת מידע (Secrets) 🔐**
     * הוצאת סיסמת המנהל מקוד המקור והעברתה לשרת ה-Secrets של Streamlit.
 
     **v1.9.1 - v1.9.2 | товарищ מיכאל ⭐**
-    * חיסול תפריט הצד במובייל ומעבר לחלון קופץ נקי.
     * דיווח ישיר לוואטסאפ של המנהל במכה אחת עם אימוג'י כוכב.
 
     **v1.9 | גרסת המנהלים 👔**
-    * אזור מנהל שזוכר התחברות, סינון שמות ב-Cache, ומניעת עיוורון מוצ"ש.
+    * אזור מנהל, סינון שמות ב-Cache, ומניעת עיוורון מוצ"ש למשמרות לילה.
 
-    **v1.8.2 | הסלקטור 🚷**
-    * סינון חכם למניעת שורות זבל ברשימת העובדים.
-
-    **v1.8 | מערכת SaaS ☁️**
-    * שמירה בשרת המרכזי שזמין לכל חברי הצוות בלייב.
+    **v1.8 - v1.8.2 | מערכת SaaS והסלקטור ☁️🚷**
+    * שמירה בשרת המרכזי שזמין לכל חברי הצוות בלייב וסינון חכם למניעת שורות זבל.
 
     **v1.0 - v1.7 | היסטוריית פיתוח מוקדמת 🧱**
-    * דילים חכמים, החלפות משולשות בשיטת שרשרת, בדיקת חוקי מנוחה, ומעבר לממשק נטול-מקלדת.
+    * דילים חכמים, החלפות משולשות, בדיקת חוקי מנוחה, ומעבר לממשק נטול-מקלדת.
     """)
     if st.button("סגירה", use_container_width=True):
         st.rerun()
@@ -164,13 +161,11 @@ def read_file_safely(file, skip):
     else:
         return pd.read_excel(file, skiprows=skip)
 
-# קריאה חכמה של הנתונים פעם אחת בלבד מהדיסק (I/O Optimization)
 @st.cache_data(show_spinner=False)
 def load_server_data():
     if not os.path.exists(DB_FILE) or not os.path.exists(WEEK_FILE):
         return None, None, None
         
-    # שליפת זמן העדכון של הקובץ מהדיסק
     mtime = os.path.getmtime(DB_FILE)
     last_updated = datetime.fromtimestamp(mtime).strftime("%d/%m/%Y בשעה %H:%M")
     
@@ -300,14 +295,12 @@ def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, per
 def main():
     st.title("מערכת חילופי משמרות 🔄")
     
-    # אתחול ה-Session State
     if "admin_logged_in" not in st.session_state:
         st.session_state.admin_logged_in = False
 
-    # כפתורי עליון
     col_ver, col_btn_admin, col_btn_log = st.columns([2, 1, 1])
     with col_ver:
-        st.caption("v2.0 | גרסת המבצר 🏰")
+        st.caption("v2.0.1 | שיטת הדחפור 🚜")
     with col_btn_admin:
         if st.button("⚙️ מנהל", type="tertiary", use_container_width=True):
             admin_dialog()
@@ -317,7 +310,6 @@ def main():
 
     st.markdown("ברוכים הבאים למערכת שתנסה למזער את הנזק בסידור העבודה. רק לבחור את השם שלך ולתת לאלגוריתם לשבור את הראש.")
 
-    # --- טעינה אופטימלית מהשרת (זיכרון מטמון) ---
     df_raw, current_week_name, last_updated = load_server_data()
     
     if df_raw is None:
@@ -383,7 +375,6 @@ def main():
     found_solution = False
     tone_options = ["נואש", "פילוסופי", "איש משפחה במצוקה", "עסקי וקר", "שוחד", "סרקסטי"]
 
-    # --- חיפוש משמרות רגילות ---
     regular_shifts_wanted = [s for s in desired_shifts if s != "חופש 🌴"]
     
     if regular_shifts_wanted:
@@ -423,7 +414,6 @@ def main():
                     with st.expander(f"🔀 סירוב מ-{partner}? ננסה דיל משולש"):
                         find_triangular_swap(user_name, current_shift, selected_day, partner, partner_shift, df, blacklist)
 
-    # --- חיפוש חופש חכם (חופש תמורת חופש) ---
     if "חופש 🌴" in desired_shifts:
         free_that_day = df[(df[selected_day] == 'חופש 🌴') & (df['שם'] != user_name) & (~df['שם'].isin(blacklist))]
         complex_swaps = []
