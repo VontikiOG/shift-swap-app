@@ -43,42 +43,40 @@ st.markdown("""
 def show_changelog():
     st.markdown("""
     ### מה חדש?
-    **v1.8 | מערכת SaaS ואזור מנהל ☁️🔒 (העדכון הגדול!)**
-    * **אזור מנהל מאובטח:** הוספנו פאנל ניהול נסתר בתפריט הצד, מוגן בסיסמה. רק מנהל המערכת יכול להעלות סידורי עבודה חדשים.
-    * **שמירה בשרת המרכזי:** האקסל כבר לא נשמר זמנית בטלפון של המשתמש. ברגע שהמנהל מעלה קובץ, הוא נשמר בשרת וזמין לכל שאר חברי הצוות בלייב מאותו הלינק.
-    * **תצוגת שבוע אקטיבי:** באנר בולט בראש העמוד שמודיע לכולם איזה שבוע מוצג כרגע במערכת, כדי למנוע בלבול והחלפות על שבועות שכבר עברו.
-    * הרחבת יומן השינויים (Changelog) לתיעוד מפורט של כל שלבי הפיתוח.
+    **v1.8.1 | תיקון קריסות (Hotfix) 🔑**
+    * תוקן באג קריסה (`StreamlitDuplicateElementKey`) בהחלפות משולשות.
+
+    **v1.8 | מערכת SaaS ואזור מנהל ☁️🔒**
+    * **אזור מנהל מאובטח:** הוספנו פאנל ניהול נסתר בתפריט הצד, מוגן בסיסמה.
+    * **שמירה בשרת המרכזי:** האקסל נשמר בשרת וזמין לכל חברי הצוות בלייב.
+    * **תצוגת שבוע אקטיבי:** באנר בולט בראש העמוד שמודיע איזה שבוע מוצג כרגע.
+    * הרחבת יומן השינויים לתיעוד מפורט.
 
     ---
     ### היסטוריית גרסאות קודמות:
     **v1.7.1 | גרסת המינימליזם 🧹**
-    * הסרת תצוגת "השבוע שלי" למניעת עומס ויזואלי וסרבול במסך הקטן של הטלפון.
-    * הטמעת אופטימיזציית Cache (`@st.cache_data`) לטעינה מהירה של הנתונים ולחיסכון במשאבים וסוללה בנייד.
+    * הסרת תצוגת "השבוע שלי" למניעת עומס ויזואלי.
+    * הטמעת אופטימיזציית Cache לטעינה מהירה.
 
     **v1.7 | אופטימיזציה ובאגים קריטיים 🚀**
-    * **שכתוב אלגוריתם שעות מנוחה:** תוקן באג מסוכן שאיפשר "קומבינות" לא חוקיות. המערכת בודקת כעת שעות מנוחה בצורה דו-כיוונית (לא מאפשרת לקחת לילה אם יש בוקר מחר, ולא מאפשרת לקחת בוקר אם יש לילה היום).
+    * **שכתוב אלגוריתם שעות מנוחה:** תוקן באג שאיפשר קומבינות לא חוקיות (בדיקה דו-כיוונית).
 
     **v1.6 | ההסבר המשולש 🔺**
-    * **שכתוב UX של ההחלפה המשולשת:** שינוי הניסוח בוואטסאפ לשיטת "תן וקח" כדי למנוע בלבול אצל הצד המסרב.
-    * **עיצוב מחדש של חלונית ההסבר ב-HTML:** כפיית כיווניות (RTL) מדויקת למניעת התהפכות של אימוג'ים ואותיות באנגלית, הוספת משפט "שרשרת" שמסביר את הקומבינה בצורה לוגית.
+    * שכתוב UX של ההחלפה המשולשת לשיטת "תן וקח".
+    * כפיית כיווניות (RTL) ב-HTML למניעת התהפכות של אימוג'ים.
 
     **v1.5 - v1.5.2 | Tap Only ומהפכת ה-UI 👆**
-    * **חיסול המקלדת הקופצת במובייל:** מעבר מלא מתיבות טקסט (Selectboxes) מעצבנות שמקפיצות מקלדת, לממשק מבוסס "קפסולות" (Pills) וכפתורי רדיו ללחיצה בלבד. חווית משתמש שמרגישה כמו אפליקציית Native.
+    * **חיסול המקלדת הקופצת במובייל:** מעבר ממקלדת לכפתורי "קפסולות" (Pills).
     * הוספת כפתור ה-Changelog.
-    * יישור כללי לימין של רשימות.
 
     **v1.4 | חופש תמורת חופש 🏖️**
-    * **דילים חכמים לחופש:** האלגוריתם שודרג. כשמשתמש מנסה להשיג יום חופש ביום X, המערכת מוצאת קולגה שבחופש ביום הזה, סורקת את השבוע של הקולגה, ומציעה לך לקחת משמרת אחרת שלו בימים הבאים. ככה מאזן המשמרות מול ההנהלה נשאר זהה!
-    * הוספת "כרית אוויר" (CSS Padding) בתחתית המסך.
+    * **דילים חכמים לחופש:** החלפה ששומרת על מאזן המשמרות מול ההנהלה.
 
     **v1.2 - v1.3 | גרסת האימפריה והניהול 👑**
-    * עורך הודעות שעבר לחלון קופץ אלגנטי.
-    * **מדד עומס:** המערכת מחשבת כמה משמרות כל עובד עושה השבוע ומתריעה מי "קורס" ומי "מטרה קלה".
-    * **רשימת חרם (Blacklist):** הוספת אפשרות לסנן אנשים ספציפיים ממנוע החיפוש.
-    * הוספת אופציה ליצירת הודעת דיווח "יבשה" מוכנה מראש להעתקה למנהל.
+    * מדד עומס, רשימת חרם (Blacklist), ויצירת הודעת דיווח "יבשה" למנהל.
 
     **v1.0 - v1.1 | הבסיס 🧱**
-    * גרסה ראשונית של אלגוריתם החלפות ישירות בין שני עובדים. הוספת לחצני שליחה לוואטסאפ עם כתיבה שנונה וטונים שונים לבחירה (נואש, סרקסטי, עסקי וכו').
+    * גרסה ראשונית של אלגוריתם החלפות, כתיבה שנונה וטונים שונים.
     """)
     if st.button("סגירה", use_container_width=True):
         st.rerun()
@@ -181,7 +179,8 @@ def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, per
                 msg = f"היי {person_a_name}, פתרתי לנו את הבעיה! אתה נותן לי את ה{person_a_shift} ב{selected_day}, ומקבל את ה{s} ב{d} של {b_name}. {b_name} לוקח את ה{user_shift} שלי. זורם?"
                 col_btn, col_pop = st.columns(2)
                 with col_btn:
-                    if st.button("שליחה 💬", key=f"tri_{b_name}_{d}"): edit_and_send_dialog(msg)
+                    # התיקון: הוספנו את person_a_name לתוך ה-Key כדי למנוע כפילויות!
+                    if st.button("שליחה 💬", key=f"tri_{person_a_name}_{b_name}_{d}"): edit_and_send_dialog(msg)
                 with col_pop:
                     with st.popover("💡 איך זה עובד?"):
                         st.markdown(f"""<div dir="rtl" style="text-align: right;">🟢 <b>אתה:</b> {person_a_shift} ({selected_day})<br>🔵 <b>{person_a_name}:</b> {s} ({d})<br>🟡 <b>{b_name}:</b> {user_shift} ({selected_day})</div>""", unsafe_allow_html=True)
@@ -191,7 +190,7 @@ def main():
     
     col_ver, col_btn = st.columns([2, 1])
     with col_ver:
-        st.caption("v1.8 | מערכת ה-SaaS ואזור המנהל ☁️🔒")
+        st.caption("v1.8.1 | תיקון המפתחות 🔑")
     with col_btn:
         if st.button("מה התחדש?", type="tertiary", use_container_width=True):
             show_changelog()
@@ -211,7 +210,6 @@ def main():
             if st.button("💾 שמור סידור עבודה בשרת", type="primary", use_container_width=True):
                 if uploaded_file and week_name:
                     try:
-                        # קריאת הקובץ והפיכתו ל-CSV סטנדרטי לשמירה
                         if uploaded_file.name.endswith('csv'):
                             df_temp = pd.read_csv(uploaded_file, skiprows=rows_to_skip)
                         else:
@@ -219,12 +217,10 @@ def main():
                         
                         df_temp.to_csv(DB_FILE, index=False)
                         
-                        # שמירת שם השבוע
                         with open(WEEK_FILE, "w", encoding="utf-8") as f:
                             f.write(week_name)
                             
                         st.success("הסידור נשמר בשרת בהצלחה! כל הצוות יכול לראות אותו עכשיו.")
-                        # מנקה את הקאש כדי שהמערכת תטען את הקובץ החדש
                         st.cache_data.clear() 
                     except Exception as e:
                         st.error(f"שגיאה בשמירת הקובץ: {e}")
@@ -247,7 +243,6 @@ def main():
             
         st.info(f"📅 **כרגע מוצג סידור עבודה:** {current_week_name}")
         
-        # קריאה וניקוי של הנתונים מהשרת
         df_raw = pd.read_csv(DB_FILE)
         df = clean_dataframe(df_raw)
         
@@ -393,24 +388,4 @@ def main():
                     options_formatted = [f"לקחת לו את ה{s} ב{d}" for d, s in options]
                     selected_option_idx = st.radio("איזו משמרת תיקח במקום?", range(len(options_formatted)), format_func=lambda x: options_formatted[x], key=f"sel_shift_{partner_name}_{selected_day}", horizontal=True)
                     
-                    selected_tone = st.radio("באיזו גישה נתקוף?", tone_options, key=f"tone_comp_{partner_name}_{selected_day}", horizontal=True)
-                    
-                    partner_day, partner_shift = options[selected_option_idx]
-                    
-                    default_msg = generate_freedom_swap_msg(selected_tone, current_shift, selected_day, partner_shift, partner_day, partner_name)
-                    
-                    col_btn, col_hr = st.columns(2)
-                    with col_btn:
-                        if st.button("שליחה בוואטסאפ 💬", use_container_width=True, key=f"btn_send_comp_{partner_name}_{selected_day}"):
-                            edit_and_send_dialog(default_msg)
-                    with col_hr:
-                        with st.popover("👔 דיווח להנהלה", use_container_width=True):
-                            hr_msg = f"היי, מבקש/ת לעדכן על החלפת משמרות להזזת יום חופש:\n- {user_name} יעשה את משמרת {partner_shift} ב{partner_day}.\n- {partner_name} יעשה את משמרת {current_shift} ב{selected_day}."
-                            st.markdown("להעתיק ולהדביק למנהל/ת:")
-                            st.code(hr_msg, language="text")
-
-    if not found_solution:
-        st.error("האלגוריתם ירק דם אבל אין אף פראייר פנוי השבוע (או שזה נופל להם על שעות מנוחה). קח נשימה עמוקה ולך להכין קפה שחור. ☕💀")
-
-if __name__ == "__main__":
-    main()
+                    selected_tone = st.radio("
