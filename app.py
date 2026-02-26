@@ -37,40 +37,69 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- חלון קופץ: יומן שינויים (Changelog) המלא (תוקן!) ---
+# --- חלון קופץ: אזור מנהל אלגנטי (מחליף את תפריט הצד!) ---
+@st.dialog("⚙️ אזור מנהל (למורשים בלבד)")
+def admin_dialog():
+    if not st.session_state.admin_logged_in:
+        st.markdown("רק מנהל המערכת מורשה להעלות סידור עבודה חדש.")
+        admin_pass = st.text_input("סיסמת גישה", type="password", placeholder="🍕 הקלד סיסמה...")
+        
+        if admin_pass == "PINKPIZZA":
+            st.session_state.admin_logged_in = True
+            st.rerun()
+        elif admin_pass != "":
+            st.error("סיסמה שגויה. נסה שוב.")
+            
+    if st.session_state.admin_logged_in:
+        st.success("מחובר כמנהל המערכת!")
+        week_name = st.text_input("מה שם השבוע? (לדוגמה: 24.03 - 30.03)", placeholder="שבוע פסח...")
+        uploaded_file = st.file_uploader("העלה אקסל סידור עבודה חדש:", type=['csv', 'xlsx'])
+        rows_to_skip = st.number_input("שורות כותרת לדילוג:", min_value=0, value=2)
+        
+        if st.button("💾 שמור סידור עבודה בשרת", type="primary", use_container_width=True):
+            if uploaded_file and week_name:
+                try:
+                    df_temp = read_file_safely(uploaded_file, rows_to_skip)
+                    df_temp.to_csv(DB_FILE, index=False)
+                    with open(WEEK_FILE, "w", encoding="utf-8") as f:
+                        f.write(week_name)
+                    st.success("הסידור נשמר בשרת בהצלחה! כל הצוות יראה אותו עכשיו.")
+                    st.cache_data.clear() 
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"שגיאה בשמירת הקובץ: {e}")
+            else:
+                st.error("חובה להזין שם שבוע ולהעלות קובץ תקין.")
+                
+        if st.button("🚪 התנתק"):
+            st.session_state.admin_logged_in = False
+            st.rerun()
+
+# --- חלון קופץ: יומן שינויים (Changelog) ---
 @st.dialog("📜 יומן שינויים - היסטוריית הפיתוח")
 def show_changelog():
     st.markdown("""
-    **v1.9 | גרסת המנהלים 👔**
-    * **דיווח ישיר למנהל:** כפתור חדש ששולח את פרטי ההחלפה ישירות לוואטסאפ של המנהל (במקום רק להעתיק).
-    * **זכירת סיסמה (Session):** אזור המנהל זוכר שאתה מחובר לאורך כל הגישה לאפליקציה.
-    * **אופטימיזציית סלקטור:** סינון שמות הזבל נשמר כעת ב-Cache לביצועים מקסימליים.
-    * **מניעת עיוורון מוצ"ש:** אזהרה אוטומטית למניעת חריגת שעות מנוחה כשמחליפים בלילה ביום האחרון של הסידור.
-    * **קריאה בטוחה:** הוספת תמיכה בקידודים בעייתיים של קבצי CSV בעברית.
-    * תוקן באג תצוגה (HTML) ביומן השינויים.
+    **v1.9.1 | товарищ מיכאל ⚒**
+    * **חיסול תפריט הצד במובייל:** אזור המנהל עבר לחלון קופץ נקי ואלגנטי שלא שובר את המסך.
+    * **דיווח ישיר:** כפתור שליחה ישירה לוואטסאפ של מיכאל במכה אחת, בלי חלוניות ביניים מיותרות.
 
-    ---
+    **v1.9 | גרסת המנהלים 👔**
+    * אזור מנהל שזוכר התחברות, סינון שמות ב-Cache, מניעת עיוורון מוצ"ש למשמרות לילה, ותמיכה בקידודי אקסל בעייתיים.
+
     **v1.8.2 | הסלקטור 🚷**
     * מנגנון סינון חכם למניעת שורות זבל (כמו "משמרת בוקר", "סה"כ") ברשימת העובדים.
 
-    **v1.8 - v1.8.1 | מערכת SaaS ואזור מנהל ☁️🔒**
-    * אזור מנהל מאובטח בסיסמה להעלאת קבצים.
-    * תצוגת "השבוע האקטיבי" בראש העמוד ומערכת קבצים מרכזית לכלל הצוות.
-    * תיקון באג קריסה בכפתורי החלפות משולשות.
+    **v1.8 | מערכת SaaS ואזור מנהל ☁️🔒**
+    * שמירה בשרת המרכזי שזמין לכל חברי הצוות בלייב, ותצוגת שבוע אקטיבי.
 
-    **v1.7 - v1.7.1 | מינימליזם ואופטימיזציה 🧹🚀**
-    * הסרת תצוגת "השבוע שלי" למניעת עומס.
-    * שכתוב אלגוריתם שעות מנוחה לבדיקה דו-כיוונית והוספת Cache לטעינת נתונים.
+    **v1.7 | מינימליזם ואופטימיזציה 🧹🚀**
+    * בדיקת שעות מנוחה קדימה ואחורה למניעת חריגות חוקיות.
 
     **v1.6 | ההסבר המשולש 🔺**
-    * שכתוב UX להחלפה משולשת ועיצוב מחדש ב-HTML למניעת היפוך אימוג'ים.
+    * שכתוב UX להחלפה משולשת בשיטת "תן וקח".
 
     **v1.4 - v1.5.2 | מהפכת ה-UI וחופש חכם 👆🏖️**
     * חיסול המקלדת הקופצת ומעבר ללחצני קפסולות. 
-    * "חופש תמורת חופש" - שמירה על מאזן משמרות תקין מול ההנהלה.
-
-    **v1.0 - v1.3 | הבסיס 🧱**
-    * מדד עומס, רשימת חרם (Blacklist), וניסוחים שנונים לוואטסאפ.
     """)
     if st.button("סגירה", use_container_width=True):
         st.rerun()
@@ -82,7 +111,7 @@ def edit_and_send_dialog(default_msg):
     url = f"https://wa.me/?text={urllib.parse.quote(edited_msg)}"
     st.link_button("🚀 פתיחת וואטסאפ ושליחה", url, use_container_width=True)
 
-# פונקציה חדשה לקריאת קבצים חסינת-תקלות
+# קריאת קבצים בטוחה
 def read_file_safely(file, skip):
     if file.name.endswith('csv'):
         for enc in ['utf-8', 'cp1255', 'iso-8859-8']:
@@ -125,7 +154,6 @@ def clean_dataframe(df):
     df = df.fillna("חופש 🌴")
     return df
 
-# סינון שמות עובדים ב-Cache לביצועים מהירים
 @st.cache_data
 def get_valid_workers(df):
     raw_workers_list = df['שם'].unique().tolist()
@@ -198,74 +226,44 @@ def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, per
             with st.container(border=True):
                 st.markdown(f"הצעה ל{person_a_name}: משמרת **{s}** ב{d} (של {b_name})")
                 
-                # אזהרת קצה שבוע למשולש
                 if selected_day == df.columns[-1] and user_shift in ["לילה 🌙", "לילה ארוך 🦉"]:
                     st.warning("⚠️ שימו לב: אתם מקבלים לילה ביום האחרון של הסידור. ודאו שאין לכם משמרת בוקר בשבוע החדש!")
 
                 msg = f"היי {person_a_name}, פתרתי לנו את הבעיה! אתה נותן לי את ה{person_a_shift} ב{selected_day}, ומקבל את ה{s} ב{d} של {b_name}. {b_name} לוקח את ה{user_shift} שלי. זורם?"
-                col_btn, col_pop = st.columns(2)
+                col_btn, col_pop, col_hr = st.columns([1,1,1])
                 with col_btn:
                     if st.button("שליחה 💬", key=f"tri_{person_a_name}_{b_name}_{d}"): edit_and_send_dialog(msg)
                 with col_pop:
                     with st.popover("💡 איך זה עובד?"):
                         st.markdown(f"""<div dir="rtl" style="text-align: right;">🟢 <b>אתה:</b> {person_a_shift} ({selected_day})<br>🔵 <b>{person_a_name}:</b> {s} ({d})<br>🟡 <b>{b_name}:</b> {user_shift} ({selected_day})</div>""", unsafe_allow_html=True)
+                with col_hr:
+                    hr_msg = f"היי מיכאל, מבקש/ת לעדכן על החלפת משמרות משולשת:\n- {user_name} יעשה את {person_a_shift} ב{selected_day} (במקום {person_a_name}).\n- {b_name} יעשה את {user_shift} ב{selected_day} (במקום {user_name}).\n- {person_a_name} יעשה את {s} ב{d} (במקום {b_name}).\n\nתודה מראש!"
+                    hr_url = f"https://wa.me/{MANAGER_PHONE}?text={urllib.parse.quote(hr_msg)}"
+                    st.link_button("שלח הודעה ל-товарищ מיכאל ⚒", hr_url, use_container_width=True)
 
 def main():
     st.title("מערכת חילופי משמרות 🔄")
     
-    col_ver, col_btn = st.columns([2, 1])
-    with col_ver:
-        st.caption("v1.9 | גרסת המנהלים 👔")
-    with col_btn:
-        if st.button("מה התחדש?", type="tertiary", use_container_width=True):
-            show_changelog()
-
-    # אתחול ה-Session State לזכירת התחברות
+    # אתחול ה-Session State
     if "admin_logged_in" not in st.session_state:
         st.session_state.admin_logged_in = False
 
-    # --- פאנל ניהול נסתר בתפריט הצד ---
-    with st.sidebar:
-        st.header("⚙️ אזור מנהל")
-        
-        if not st.session_state.admin_logged_in:
-            st.markdown("רק מנהל המערכת מורשה להעלות סידור עבודה חדש.")
-            admin_pass = st.text_input("סיסמת גישה", type="password", placeholder="🍕 הקלד סיסמה...")
-            if admin_pass == "PINKPIZZA":
-                st.session_state.admin_logged_in = True
-                st.rerun()
-            elif admin_pass != "":
-                st.error("סיסמה שגויה. נסה שוב.")
-                
-        if st.session_state.admin_logged_in:
-            st.success("מחובר כמנהל המערכת!")
-            if st.button("🚪 התנתק"):
-                st.session_state.admin_logged_in = False
-                st.rerun()
-                
-            week_name = st.text_input("מה שם השבוע? (לדוגמה: 24.03 - 30.03)", placeholder="שבוע פסח...")
-            uploaded_file = st.file_uploader("העלה אקסל סידור עבודה חדש:", type=['csv', 'xlsx'])
-            rows_to_skip = st.number_input("שורות כותרת לדילוג:", min_value=0, value=2)
-            
-            if st.button("💾 שמור סידור עבודה בשרת", type="primary", use_container_width=True):
-                if uploaded_file and week_name:
-                    try:
-                        df_temp = read_file_safely(uploaded_file, rows_to_skip)
-                        df_temp.to_csv(DB_FILE, index=False)
-                        with open(WEEK_FILE, "w", encoding="utf-8") as f:
-                            f.write(week_name)
-                        st.success("הסידור נשמר בשרת בהצלחה! כל הצוות יכול לראות אותו עכשיו.")
-                        st.cache_data.clear() 
-                    except Exception as e:
-                        st.error(f"שגיאה בשמירת הקובץ: {e}")
-                else:
-                    st.error("חובה להזין שם שבוע ולהעלות קובץ תקין.")
+    # כפתורי עליון - הוספנו כפתור לאזור מנהל במקום תפריט צד!
+    col_ver, col_btn_admin, col_btn_log = st.columns([2, 1, 1])
+    with col_ver:
+        st.caption("v1.9.1 | מבצע מיכאל ⚒")
+    with col_btn_admin:
+        if st.button("⚙️ מנהל", type="tertiary", use_container_width=True):
+            admin_dialog()
+    with col_btn_log:
+        if st.button("מה התחדש?", type="tertiary", use_container_width=True):
+            show_changelog()
 
     st.markdown("ברוכים הבאים למערכת שתנסה למזער את הנזק בסידור העבודה. רק לבחור את השם שלך ולתת לאלגוריתם לשבור את הראש.")
 
     # --- טעינה מהשרת ---
     if not os.path.exists(DB_FILE) or not os.path.exists(WEEK_FILE):
-        st.warning("⚠️ המנהל עדיין לא העלה סידור עבודה למערכת. פתחו את תפריט הצד כדי להיכנס לאזור המנהל.")
+        st.warning("⚠️ המנהל עדיין לא העלה סידור עבודה למערכת. לחצו על כפתור 'מנהל' למעלה כדי להעלות קובץ.")
         st.stop()
 
     try:
@@ -352,7 +350,6 @@ def main():
                     st.markdown(f"### 👤 {partner}")
                     st.caption(f"במשמרת {partner_shift} | {workload_text}")
                     
-                    # אזהרת מוצ"ש למקבל הלילה (אתה)
                     if selected_day == df.columns[-1] and partner_shift in ["לילה 🌙", "לילה ארוך 🦉"]:
                         st.warning("⚠️ שימו לב: אתם לוקחים משמרת לילה ביום האחרון של הסידור. ודאו שאין לכם משמרת בוקר בשבוע החדש!")
 
@@ -364,10 +361,9 @@ def main():
                         if st.button("שליחה בוואטסאפ 💬", use_container_width=True, key=f"btn_send_{partner}_{selected_day}"):
                             edit_and_send_dialog(default_msg)
                     with col_hr:
-                        with st.popover("👔 דיווח להנהלה", use_container_width=True):
-                            hr_msg = f"היי, מבקש/ת לעדכן על החלפת משמרות ב{selected_day}:\n- {user_name} יעשה את משמרת {partner_shift}.\n- {partner} יעשה את משמרת {current_shift}."
-                            hr_url = f"https://wa.me/{MANAGER_PHONE}?text={urllib.parse.quote(hr_msg)}"
-                            st.link_button("שלח דיווח למנהל בוואטסאפ 🚀", hr_url, use_container_width=True)
+                        hr_msg = f"היי מיכאל, מבקש/ת לעדכן על החלפת משמרות ב{selected_day}:\n- {user_name} יעשה את {partner_shift}.\n- {partner} יעשה את {current_shift}."
+                        hr_url = f"https://wa.me/{MANAGER_PHONE}?text={urllib.parse.quote(hr_msg)}"
+                        st.link_button("שלח הודעה ל-товарищ מיכאל ⚒", hr_url, use_container_width=True)
                             
                     with st.expander(f"🔀 סירוב מ-{partner}? ננסה דיל משולש"):
                         find_triangular_swap(user_name, current_shift, selected_day, partner, partner_shift, df, blacklist)
@@ -403,7 +399,6 @@ def main():
                     selected_tone = st.radio("באיזו גישה נתקוף?", tone_options, key=f"tone_comp_{partner_name}_{selected_day}", horizontal=True)
                     partner_day, partner_shift = options[selected_option_idx]
                     
-                    # אזהרת מוצ"ש למקבל (אתה) של משמרת בתמורה
                     if partner_day == df.columns[-1] and partner_shift in ["לילה 🌙", "לילה ארוך 🦉"]:
                         st.warning("⚠️ שימו לב: אתם מקבלים משמרת לילה ביום האחרון של הסידור. ודאו שאין לכם בוקר בשבוע החדש!")
 
@@ -414,10 +409,9 @@ def main():
                         if st.button("שליחה בוואטסאפ 💬", use_container_width=True, key=f"btn_send_comp_{partner_name}_{selected_day}"):
                             edit_and_send_dialog(default_msg)
                     with col_hr:
-                        with st.popover("👔 דיווח להנהלה", use_container_width=True):
-                            hr_msg = f"היי, מבקש/ת לעדכן על החלפת משמרות להזזת יום חופש:\n- {user_name} יעשה את משמרת {partner_shift} ב{partner_day}.\n- {partner_name} יעשה את משמרת {current_shift} ב{selected_day}."
-                            hr_url = f"https://wa.me/{MANAGER_PHONE}?text={urllib.parse.quote(hr_msg)}"
-                            st.link_button("שלח דיווח למנהל בוואטסאפ 🚀", hr_url, use_container_width=True)
+                        hr_msg = f"היי מיכאל, מבקש/ת לעדכן על החלפת משמרות להזזת יום חופש:\n- {user_name} יעשה את {partner_shift} ב{partner_day}.\n- {partner_name} יעשה את {current_shift} ב{selected_day}."
+                        hr_url = f"https://wa.me/{MANAGER_PHONE}?text={urllib.parse.quote(hr_msg)}"
+                        st.link_button("שלח הודעה ל-товарищ מיכאל ⚒", hr_url, use_container_width=True)
 
     if not found_solution:
         st.error("האלגוריתם ירק דם אבל אין אף פראייר פנוי השבוע. קח נשימה עמוקה ולך להכין קפה שחור. ☕💀")
