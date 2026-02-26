@@ -388,4 +388,24 @@ def main():
                     options_formatted = [f"לקחת לו את ה{s} ב{d}" for d, s in options]
                     selected_option_idx = st.radio("איזו משמרת תיקח במקום?", range(len(options_formatted)), format_func=lambda x: options_formatted[x], key=f"sel_shift_{partner_name}_{selected_day}", horizontal=True)
                     
-                    selected_tone = st.radio("
+                    selected_tone = st.radio("באיזו גישה נתקוף?", tone_options, key=f"tone_comp_{partner_name}_{selected_day}", horizontal=True)
+                    
+                    partner_day, partner_shift = options[selected_option_idx]
+                    
+                    default_msg = generate_freedom_swap_msg(selected_tone, current_shift, selected_day, partner_shift, partner_day, partner_name)
+                    
+                    col_btn, col_hr = st.columns(2)
+                    with col_btn:
+                        if st.button("שליחה בוואטסאפ 💬", use_container_width=True, key=f"btn_send_comp_{partner_name}_{selected_day}"):
+                            edit_and_send_dialog(default_msg)
+                    with col_hr:
+                        with st.popover("👔 דיווח להנהלה", use_container_width=True):
+                            hr_msg = f"היי, מבקש/ת לעדכן על החלפת משמרות להזזת יום חופש:\n- {user_name} יעשה את משמרת {partner_shift} ב{partner_day}.\n- {partner_name} יעשה את משמרת {current_shift} ב{selected_day}."
+                            st.markdown("להעתיק ולהדביק למנהל/ת:")
+                            st.code(hr_msg, language="text")
+
+    if not found_solution:
+        st.error("האלגוריתם ירק דם אבל אין אף פראייר פנוי השבוע (או שזה נופל להם על שעות מנוחה). קח נשימה עמוקה ולך להכין קפה שחור. ☕💀")
+
+if __name__ == "__main__":
+    main()
