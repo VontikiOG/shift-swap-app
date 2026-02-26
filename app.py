@@ -13,7 +13,8 @@ SHIFT_TYPES = {
     "חופש 🌴": "חופש"
 }
 
-# קבצי ה"שרת" שלנו
+# מספרי טלפון וקבצי שרת
+MANAGER_PHONE = "972503068808"
 DB_FILE = "schedule.csv"
 WEEK_FILE = "week_name.txt"
 
@@ -24,8 +25,6 @@ st.markdown("""
 <style>
     .stApp { direction: rtl; }
     p, div, h1, h2, h3, h4, h5, h6, label, span, li { text-align: right !important; }
-    
-    /* כרית אוויר ענקית למטה */
     .block-container { padding-bottom: 350px !important; }
     [data-testid="stDataFrame"] { direction: rtl; }
     div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] { gap: 0.5rem; }
@@ -38,59 +37,41 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- חלון קופץ: יומן שינויים (Changelog) המלא והמפורט ---
+# --- חלון קופץ: יומן שינויים (Changelog) המלא (תוקן!) ---
 @st.dialog("📜 יומן שינויים - היסטוריית הפיתוח")
 def show_changelog():
     st.markdown("""
-    <div dir="rtl" style="text-align: right; line-height: 1.6; font-family: sans-serif;">
-        <b>v1.8.2 | הסלקטור 🚷</b><br>
-        • מנגנון סינון חכם (Bouncer) למניעת שורות זבל (כמו "משמרת בוקר", "סה"כ") ברשימת השמות.<br><br>
+    **v1.9 | גרסת המנהלים 👔**
+    * **דיווח ישיר למנהל:** כפתור חדש ששולח את פרטי ההחלפה ישירות לוואטסאפ של המנהל (במקום רק להעתיק).
+    * **זכירת סיסמה (Session):** אזור המנהל זוכר שאתה מחובר לאורך כל הגישה לאפליקציה.
+    * **אופטימיזציית סלקטור:** סינון שמות הזבל נשמר כעת ב-Cache לביצועים מקסימליים.
+    * **מניעת עיוורון מוצ"ש:** אזהרה אוטומטית למניעת חריגת שעות מנוחה כשמחליפים בלילה ביום האחרון של הסידור.
+    * **קריאה בטוחה:** הוספת תמיכה בקידודים בעייתיים של קבצי CSV בעברית.
+    * תוקן באג תצוגה (HTML) ביומן השינויים.
 
-        <b>v1.8.1 | תיקון קריסות (Hotfix) 🔑</b><br>
-        • תוקן באג קריסה בכפתורי השליחה של ההחלפות המשולשות.<br><br>
+    ---
+    **v1.8.2 | הסלקטור 🚷**
+    * מנגנון סינון חכם למניעת שורות זבל (כמו "משמרת בוקר", "סה"כ") ברשימת העובדים.
 
-        <b>v1.8 | מערכת SaaS ואזור מנהל ☁️🔒</b><br>
-        • פאנל ניהול נסתר מאובטח בסיסמה להעלאת קבצים לשרת.<br>
-        • תצוגת "השבוע האקטיבי" בולטת לכל המשתמשים באפליקציה.<br><br>
+    **v1.8 - v1.8.1 | מערכת SaaS ואזור מנהל ☁️🔒**
+    * אזור מנהל מאובטח בסיסמה להעלאת קבצים.
+    * תצוגת "השבוע האקטיבי" בראש העמוד ומערכת קבצים מרכזית לכלל הצוות.
+    * תיקון באג קריסה בכפתורי החלפות משולשות.
 
-        <b>v1.7.1 | גרסת המינימליזם 🧹</b><br>
-        • הסרת תצוגת "השבוע שלי" למניעת עומס ויזואלי במובייל.<br><br>
+    **v1.7 - v1.7.1 | מינימליזם ואופטימיזציה 🧹🚀**
+    * הסרת תצוגת "השבוע שלי" למניעת עומס.
+    * שכתוב אלגוריתם שעות מנוחה לבדיקה דו-כיוונית והוספת Cache לטעינת נתונים.
 
-        <b>v1.7 | אופטימיזציה ובאגים קריטיים 🚀</b><br>
-        • תיקון אלגוריתם שעות מנוחה: בדיקה גם קדימה וגם אחורה למניעת חריגות חוקיות.<br>
-        • אופטימיזציית Cache לטעינה מהירה של נתונים.<br><br>
+    **v1.6 | ההסבר המשולש 🔺**
+    * שכתוב UX להחלפה משולשת ועיצוב מחדש ב-HTML למניעת היפוך אימוג'ים.
 
-        <b>v1.6 | ההסבר המשולש 🔺</b><br>
-        • שכתוב מלא של הסבר ההחלפה המשולשת בוואטסאפ לשיטת "תן וקח".<br>
-        • עיצוב מחדש של חלונית ההסבר ב-HTML עם שרשרת הסבר ברורה.<br><br>
+    **v1.4 - v1.5.2 | מהפכת ה-UI וחופש חכם 👆🏖️**
+    * חיסול המקלדת הקופצת ומעבר ללחצני קפסולות. 
+    * "חופש תמורת חופש" - שמירה על מאזן משמרות תקין מול ההנהלה.
 
-        <b>v1.5.2 | יומן שינויים 📜</b><br>
-        • הוספת כפתור ה-Changelog למעקב אחרי גרסאות האפליקציה.<br><br>
-
-        <b>v1.5.1 | היישור לימין 📐</b><br>
-        • תיקון באג תצוגה וכפיית כיווניות (RTL) ברשימות.<br><br>
-
-        <b>v1.5 | גרסת ה-Tap Only 👆</b><br>
-        • ביטול המקלדת הקופצת במובייל ומעבר ל"קפסולות" (Pills).<br><br>
-
-        <b>v1.4 | חופש תמורת חופש 🏖️</b><br>
-        • דילים חכמים לחופש ששומרים על מאזן המשמרות מול ההנהלה.<br><br>
-
-        <b>v1.3 | חלונות קופצים 🧼</b><br>
-        • עורך הודעות בוואטסאפ שעבר לחלון קופץ אלגנטי שחוסך מקום.<br><br>
-
-        <b>v1.2 | גרסת האימפריה 👑</b><br>
-        • מדד עומס למשתמשים, רשימת חרם (Blacklist) ודיווח יבש להנהלה.<br><br>
-
-        <b>v1.1 | גרסת הסרקזם 🍷</b><br>
-        • כתיבה שנונה וטונים שונים לוואטסאפ (נואש, סרקסטי, עסקי וכו').<br><br>
-
-        <b>v1.0 | הבסיס 🧱</b><br>
-        • אלגוריתם בסיסי למציאת החלפות ישירות מול קובץ אקסל.
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.write("") # מרווח קטן
+    **v1.0 - v1.3 | הבסיס 🧱**
+    * מדד עומס, רשימת חרם (Blacklist), וניסוחים שנונים לוואטסאפ.
+    """)
     if st.button("סגירה", use_container_width=True):
         st.rerun()
 
@@ -100,6 +81,19 @@ def edit_and_send_dialog(default_msg):
     edited_msg = st.text_area("תוכן ההודעה", value=default_msg, height=150, label_visibility="collapsed")
     url = f"https://wa.me/?text={urllib.parse.quote(edited_msg)}"
     st.link_button("🚀 פתיחת וואטסאפ ושליחה", url, use_container_width=True)
+
+# פונקציה חדשה לקריאת קבצים חסינת-תקלות
+def read_file_safely(file, skip):
+    if file.name.endswith('csv'):
+        for enc in ['utf-8', 'cp1255', 'iso-8859-8']:
+            try:
+                file.seek(0)
+                return pd.read_csv(file, skiprows=skip, encoding=enc)
+            except UnicodeDecodeError:
+                continue
+        raise ValueError("שגיאת קידוד: הקובץ חייב להיות תקין בעברית.")
+    else:
+        return pd.read_excel(file, skiprows=skip)
 
 @st.cache_data
 def clean_dataframe(df):
@@ -131,18 +125,32 @@ def clean_dataframe(df):
     df = df.fillna("חופש 🌴")
     return df
 
+# סינון שמות עובדים ב-Cache לביצועים מהירים
+@st.cache_data
+def get_valid_workers(df):
+    raw_workers_list = df['שם'].unique().tolist()
+    forbidden_words = ["בוקר", "ערב", "לילה", "חופש", "משמרת", "סה\"כ", "סהכ", "הערות", "מנהל", "nan", "none"]
+    workers_list = []
+    
+    for w in raw_workers_list:
+        w_str = str(w).strip()
+        if not w_str or w_str.lower() in ["nan", "none"]:
+            continue
+        if any(bad_word in w_str for bad_word in forbidden_words):
+            continue
+        workers_list.append(w_str)
+    return workers_list
+
 def check_legal_rest(person_taking_shift, shift_to_take, day_taking, df):
     days = [col for col in df.columns if col != 'שם']
     if day_taking not in days: return True
     idx = days.index(day_taking)
     
-    # בדיקה קדימה
     if shift_to_take in ["לילה 🌙", "לילה ארוך 🦉"]:
         if idx + 1 < len(days):
             next_shift = df[df['שם'] == person_taking_shift][days[idx+1]].values[0]
             if next_shift in ["בוקר ☀️", "בוקר ארוך 🌤️"]: return False 
                 
-    # בדיקה אחורה
     if shift_to_take in ["בוקר ☀️", "בוקר ארוך 🌤️"]:
         if idx - 1 >= 0:
             prev_shift = df[df['שם'] == person_taking_shift][days[idx-1]].values[0]
@@ -189,6 +197,11 @@ def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, per
         for d, s in shifts.items():
             with st.container(border=True):
                 st.markdown(f"הצעה ל{person_a_name}: משמרת **{s}** ב{d} (של {b_name})")
+                
+                # אזהרת קצה שבוע למשולש
+                if selected_day == df.columns[-1] and user_shift in ["לילה 🌙", "לילה ארוך 🦉"]:
+                    st.warning("⚠️ שימו לב: אתם מקבלים לילה ביום האחרון של הסידור. ודאו שאין לכם משמרת בוקר בשבוע החדש!")
+
                 msg = f"היי {person_a_name}, פתרתי לנו את הבעיה! אתה נותן לי את ה{person_a_shift} ב{selected_day}, ומקבל את ה{s} ב{d} של {b_name}. {b_name} לוקח את ה{user_shift} שלי. זורם?"
                 col_btn, col_pop = st.columns(2)
                 with col_btn:
@@ -202,19 +215,34 @@ def main():
     
     col_ver, col_btn = st.columns([2, 1])
     with col_ver:
-        st.caption("v1.8.2 | הסלקטור 🚷")
+        st.caption("v1.9 | גרסת המנהלים 👔")
     with col_btn:
         if st.button("מה התחדש?", type="tertiary", use_container_width=True):
             show_changelog()
 
+    # אתחול ה-Session State לזכירת התחברות
+    if "admin_logged_in" not in st.session_state:
+        st.session_state.admin_logged_in = False
+
     # --- פאנל ניהול נסתר בתפריט הצד ---
     with st.sidebar:
         st.header("⚙️ אזור מנהל")
-        st.markdown("רק מנהל המערכת מורשה להעלות סידור עבודה חדש.")
-        admin_pass = st.text_input("סיסמת גישה", type="password", placeholder="🍕 הקלד סיסמה...")
         
-        if admin_pass == "PINKPIZZA":
-            st.success("התחברת בהצלחה כמנהל!")
+        if not st.session_state.admin_logged_in:
+            st.markdown("רק מנהל המערכת מורשה להעלות סידור עבודה חדש.")
+            admin_pass = st.text_input("סיסמת גישה", type="password", placeholder="🍕 הקלד סיסמה...")
+            if admin_pass == "PINKPIZZA":
+                st.session_state.admin_logged_in = True
+                st.rerun()
+            elif admin_pass != "":
+                st.error("סיסמה שגויה. נסה שוב.")
+                
+        if st.session_state.admin_logged_in:
+            st.success("מחובר כמנהל המערכת!")
+            if st.button("🚪 התנתק"):
+                st.session_state.admin_logged_in = False
+                st.rerun()
+                
             week_name = st.text_input("מה שם השבוע? (לדוגמה: 24.03 - 30.03)", placeholder="שבוע פסח...")
             uploaded_file = st.file_uploader("העלה אקסל סידור עבודה חדש:", type=['csv', 'xlsx'])
             rows_to_skip = st.number_input("שורות כותרת לדילוג:", min_value=0, value=2)
@@ -222,37 +250,27 @@ def main():
             if st.button("💾 שמור סידור עבודה בשרת", type="primary", use_container_width=True):
                 if uploaded_file and week_name:
                     try:
-                        if uploaded_file.name.endswith('csv'):
-                            df_temp = pd.read_csv(uploaded_file, skiprows=rows_to_skip)
-                        else:
-                            df_temp = pd.read_excel(uploaded_file, skiprows=rows_to_skip)
-                        
+                        df_temp = read_file_safely(uploaded_file, rows_to_skip)
                         df_temp.to_csv(DB_FILE, index=False)
-                        
                         with open(WEEK_FILE, "w", encoding="utf-8") as f:
                             f.write(week_name)
-                            
                         st.success("הסידור נשמר בשרת בהצלחה! כל הצוות יכול לראות אותו עכשיו.")
                         st.cache_data.clear() 
                     except Exception as e:
                         st.error(f"שגיאה בשמירת הקובץ: {e}")
                 else:
                     st.error("חובה להזין שם שבוע ולהעלות קובץ תקין.")
-        elif admin_pass != "":
-            st.error("סיסמה שגויה. נסה שוב.")
 
     st.markdown("ברוכים הבאים למערכת שתנסה למזער את הנזק בסידור העבודה. רק לבחור את השם שלך ולתת לאלגוריתם לשבור את הראש.")
 
-    # --- בדיקה אם המנהל (אתה) כבר העלה קובץ לשרת ---
+    # --- טעינה מהשרת ---
     if not os.path.exists(DB_FILE) or not os.path.exists(WEEK_FILE):
-        st.warning("⚠️ המנהל עדיין לא העלה סידור עבודה למערכת. פתחו את תפריט הצד (החץ למעלה) כדי להיכנס לאזור המנהל.")
+        st.warning("⚠️ המנהל עדיין לא העלה סידור עבודה למערכת. פתחו את תפריט הצד כדי להיכנס לאזור המנהל.")
         st.stop()
 
-    # --- אם יש קובץ בשרת, טוענים אותו ישירות למשתמשים ---
     try:
         with open(WEEK_FILE, "r", encoding="utf-8") as f:
             current_week_name = f.read()
-            
         st.info(f"📅 **כרגע מוצג סידור עבודה:** {current_week_name}")
         
         df_raw = pd.read_csv(DB_FILE)
@@ -260,7 +278,6 @@ def main():
         
         with st.expander("👀 הצצה לסידור המלא (בלי צבעים עושי מיגרנה)"):
             st.dataframe(df, use_container_width=True)
-            
     except Exception as e:
         st.error(f"שגיאה בטעינת הקובץ מהשרת: {e}")
         st.stop()
@@ -271,24 +288,9 @@ def main():
         st.error("🚨 קריסה! הקובץ שהועלה פגום (אין עמודה בשם 'שם'). המנהל נדרש להעלות קובץ תקין.")
         st.stop()
 
-    # --- הפעלת "הסלקטור" לסינון שמות זבל ---
-    raw_workers_list = df['שם'].unique().tolist()
-    forbidden_words = ["בוקר", "ערב", "לילה", "חופש", "משמרת", "סה\"כ", "סהכ", "הערות", "מנהל", "nan", "none"]
-    
-    workers_list = []
-    for w in raw_workers_list:
-        w_str = str(w).strip()
-        if not w_str or w_str.lower() in ["nan", "none"]:
-            continue
-            
-        # אם השם מכיל אחת מהמילים האסורות - מדלגים עליו
-        if any(bad_word in w_str for bad_word in forbidden_words):
-            continue
-            
-        workers_list.append(w_str)
+    workers_list = get_valid_workers(df)
     
     user_name = st.pills("מה שמך? (לחץ לבחירה):", workers_list, selection_mode="single")
-    
     if not user_name: 
         st.info("👆 לחץ על השם שלך כדי להתחיל")
         st.stop()
@@ -298,12 +300,11 @@ def main():
 
     if not my_active_shifts:
         st.balloons()
-        st.success("אין משמרות השבוע! או שפיטרו אותך, או שזכית בלוטו. עוף לים. 🏖️")
+        st.success("אין משמרות השבוע! עוף לים. 🏖️")
         st.stop()
 
     st.write("") 
     selected_day = st.pills("מאיזו משמרת בא לך לברוח?", list(my_active_shifts.keys()), selection_mode="single")
-    
     if not selected_day:
         st.stop()
 
@@ -311,9 +312,7 @@ def main():
     st.warning(f"גזר הדין הנוכחי: משמרת **{current_shift}** ב{selected_day}.")
     
     with st.expander("🚫 רשימת החרם (לחץ כדי לסנן אנשים)"):
-        blacklist = st.pills("בחר אנשים שלא יופיעו בתוצאות:", [w for w in workers_list if w != user_name], selection_mode="multi")
-        if not blacklist:
-            blacklist = []
+        blacklist = st.pills("בחר אנשים שלא יופיעו בתוצאות:", [w for w in workers_list if w != user_name], selection_mode="multi") or []
 
     all_possible_shifts = ["בוקר ☀️", "בוקר ארוך 🌤️", "ערב 🌇", "לילה ארוך 🦉", "לילה 🌙", "חופש 🌴"]
     st.write("")
@@ -323,7 +322,7 @@ def main():
         st.stop() 
 
     if current_shift in desired_shifts:
-        st.error("ניסיון יפה, אבל בחרת להחליף לאותה משמרת שאתה כבר עושה. הכל טוב בבית? 🤨")
+        st.error("בחרת להחליף לאותה משמרת שאתה כבר עושה. הכל טוב בבית? 🤨")
         st.stop()
 
     st.divider()
@@ -353,8 +352,11 @@ def main():
                     st.markdown(f"### 👤 {partner}")
                     st.caption(f"במשמרת {partner_shift} | {workload_text}")
                     
+                    # אזהרת מוצ"ש למקבל הלילה (אתה)
+                    if selected_day == df.columns[-1] and partner_shift in ["לילה 🌙", "לילה ארוך 🦉"]:
+                        st.warning("⚠️ שימו לב: אתם לוקחים משמרת לילה ביום האחרון של הסידור. ודאו שאין לכם משמרת בוקר בשבוע החדש!")
+
                     selected_tone = st.radio("באיזו גישה נתקוף?", tone_options, key=f"tone_{partner}_{selected_day}", horizontal=True)
-                    
                     default_msg = generate_whatsapp_msg(selected_tone, current_shift, partner_shift, selected_day, partner)
                     
                     col_btn, col_hr = st.columns(2)
@@ -364,9 +366,9 @@ def main():
                     with col_hr:
                         with st.popover("👔 דיווח להנהלה", use_container_width=True):
                             hr_msg = f"היי, מבקש/ת לעדכן על החלפת משמרות ב{selected_day}:\n- {user_name} יעשה את משמרת {partner_shift}.\n- {partner} יעשה את משמרת {current_shift}."
-                            st.markdown("להעתיק ולהדביק למנהל/ת:")
-                            st.code(hr_msg, language="text")
-                    
+                            hr_url = f"https://wa.me/{MANAGER_PHONE}?text={urllib.parse.quote(hr_msg)}"
+                            st.link_button("שלח דיווח למנהל בוואטסאפ 🚀", hr_url, use_container_width=True)
+                            
                     with st.expander(f"🔀 סירוב מ-{partner}? ננסה דיל משולש"):
                         find_triangular_swap(user_name, current_shift, selected_day, partner, partner_shift, df, blacklist)
 
@@ -376,48 +378,35 @@ def main():
         complex_swaps = []
         for _, partner in free_that_day.iterrows():
             partner_name = partner['שם']
-            
-            if not check_legal_rest(partner_name, current_shift, selected_day, df):
-                continue
+            if not check_legal_rest(partner_name, current_shift, selected_day, df): continue
                 
-            partner_shifts = partner.to_dict()
-            valid_return_shifts = []
-            
-            for day, p_shift in partner_shifts.items():
-                if day in ['שם', selected_day]: continue 
-                if day in df.columns:
-                    my_status_that_day = df[df['שם'] == user_name][day].values[0]
-                    if my_status_that_day == 'חופש 🌴' and p_shift != 'חופש 🌴':
-                        if check_legal_rest(user_name, p_shift, day, df):
-                            valid_return_shifts.append((day, p_shift))
-
+            valid_return_shifts = [(day, p_shift) for day, p_shift in partner.to_dict().items() 
+                                   if day not in ['שם', selected_day] and p_shift != 'חופש 🌴' 
+                                   and day in df.columns and df[df['שם'] == user_name][day].values[0] == 'חופש 🌴' 
+                                   and check_legal_rest(user_name, p_shift, day, df)]
             if valid_return_shifts:
-                complex_swaps.append({
-                    'partner': partner_name,
-                    'options': valid_return_shifts
-                })
+                complex_swaps.append({'partner': partner_name, 'options': valid_return_shifts})
 
         if complex_swaps:
             found_solution = True
             st.markdown(f"#### 🌴 דילים חכמים להשגת יום חופש ב{selected_day}:")
-            st.caption("*(החלפה מאוזנת: אתה נותן משמרת, ולוקח משמרת ביום אחר במקומה)*")
-            
             for swap in complex_swaps:
                 partner_name = swap['partner']
                 options = swap['options']
-                workload_text = get_workload_text(partner_name, df)
                 
                 with st.container(border=True):
                     st.markdown(f"### 🌴 {partner_name}")
-                    st.caption(f"חופש ב{selected_day} | {workload_text}")
+                    st.caption(f"חופש ב{selected_day} | {get_workload_text(partner_name, df)}")
                     
                     options_formatted = [f"לקחת לו את ה{s} ב{d}" for d, s in options]
                     selected_option_idx = st.radio("איזו משמרת תיקח במקום?", range(len(options_formatted)), format_func=lambda x: options_formatted[x], key=f"sel_shift_{partner_name}_{selected_day}", horizontal=True)
-                    
                     selected_tone = st.radio("באיזו גישה נתקוף?", tone_options, key=f"tone_comp_{partner_name}_{selected_day}", horizontal=True)
-                    
                     partner_day, partner_shift = options[selected_option_idx]
                     
+                    # אזהרת מוצ"ש למקבל (אתה) של משמרת בתמורה
+                    if partner_day == df.columns[-1] and partner_shift in ["לילה 🌙", "לילה ארוך 🦉"]:
+                        st.warning("⚠️ שימו לב: אתם מקבלים משמרת לילה ביום האחרון של הסידור. ודאו שאין לכם בוקר בשבוע החדש!")
+
                     default_msg = generate_freedom_swap_msg(selected_tone, current_shift, selected_day, partner_shift, partner_day, partner_name)
                     
                     col_btn, col_hr = st.columns(2)
@@ -427,11 +416,11 @@ def main():
                     with col_hr:
                         with st.popover("👔 דיווח להנהלה", use_container_width=True):
                             hr_msg = f"היי, מבקש/ת לעדכן על החלפת משמרות להזזת יום חופש:\n- {user_name} יעשה את משמרת {partner_shift} ב{partner_day}.\n- {partner_name} יעשה את משמרת {current_shift} ב{selected_day}."
-                            st.markdown("להעתיק ולהדביק למנהל/ת:")
-                            st.code(hr_msg, language="text")
+                            hr_url = f"https://wa.me/{MANAGER_PHONE}?text={urllib.parse.quote(hr_msg)}"
+                            st.link_button("שלח דיווח למנהל בוואטסאפ 🚀", hr_url, use_container_width=True)
 
     if not found_solution:
-        st.error("האלגוריתם ירק דם אבל אין אף פראייר פנוי השבוע (או שזה נופל להם על שעות מנוחה). קח נשימה עמוקה ולך להכין קפה שחור. ☕💀")
+        st.error("האלגוריתם ירק דם אבל אין אף פראייר פנוי השבוע. קח נשימה עמוקה ולך להכין קפה שחור. ☕💀")
 
 if __name__ == "__main__":
     main()
