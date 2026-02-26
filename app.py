@@ -33,18 +33,6 @@ st.markdown("""
         h1 { font-size: 1.8rem !important; }
         div.row-widget.stRadio > div { flex-direction: row; flex-wrap: wrap; }
     }
-    
-    /* עיצוב לתצוגת השבוע שלי */
-    .week-day-box {
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        padding: 5px;
-        text-align: center;
-        background-color: #f9f9f9;
-        margin-bottom: 10px;
-    }
-    .week-day-title { font-size: 0.8rem; font-weight: bold; color: #555;}
-    .week-day-shift { font-size: 0.9rem; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -286,23 +274,6 @@ def main():
     if not user_name: 
         st.info("👆 לחץ על השם שלך כדי להתחיל")
         st.stop()
-
-    # --- תצוגת "השבוע שלי" ---
-    st.markdown("##### 📅 השבוע שלי:")
-    my_full_week = df[df['שם'] == user_name].iloc[0].to_dict()
-    days_only = {k: v for k, v in my_full_week.items() if k != 'שם'}
-    
-    # הצגת ימי השבוע בתוך עמודות יפות
-    week_cols = st.columns(len(days_only))
-    for col, (day, shift) in zip(week_cols, days_only.items()):
-        with col:
-            color = "#e8f5e9" if shift != "חופש 🌴" else "#ffebee"
-            st.markdown(f"""
-            <div style="border: 1px solid #ccc; border-radius: 5px; padding: 5px; text-align: center; background-color: {color}; margin-bottom: 10px;">
-                <div style="font-size: 0.75rem; font-weight: bold; color: #555;">{day}</div>
-                <div style="font-size: 0.85rem;">{shift}</div>
-            </div>
-            """, unsafe_allow_html=True)
             
     my_active_shifts = {day: shift for day, shift in days_only.items() if shift != 'חופש 🌴'}
 
@@ -445,3 +416,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
