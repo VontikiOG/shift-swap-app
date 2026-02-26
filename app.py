@@ -33,18 +33,6 @@ st.markdown("""
         h1 { font-size: 1.8rem !important; }
         div.row-widget.stRadio > div { flex-direction: row; flex-wrap: wrap; }
     }
-    
-    /* עיצוב לתצוגת השבוע שלי */
-    .week-day-box {
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        padding: 5px;
-        text-align: center;
-        background-color: #f9f9f9;
-        margin-bottom: 10px;
-    }
-    .week-day-title { font-size: 0.8rem; font-weight: bold; color: #555;}
-    .week-day-shift { font-size: 0.9rem; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -52,28 +40,26 @@ st.markdown("""
 @st.dialog("📜 יומן שינויים (Changelog)")
 def show_changelog():
     st.markdown("""
+    **v1.7.1 | מינימליזם 🧹**
+    * הוסרה תצוגת "השבוע שלי" למניעת עומס ויזואלי וסרבול.
+
     **v1.7 | אופטימיזציה ובאגים 🚀**
-    * תיקון אלגוריתם שעות מנוחה: בודק גם קדימה (לילה -> בוקר) וגם אחורה (בוקר <- לילה).
+    * תיקון אלגוריתם שעות מנוחה: בודק גם קדימה וגם אחורה.
     * אופטימיזציית Cache לטעינה מהירה של הנתונים.
-    * נוספה תצוגת "השבוע שלי" בראש העמוד.
 
     **v1.6 | ההסבר המשולש 🔺**
     * שכתוב מלא של הסבר ההחלפה המשולשת בוואטסאפ לשיטת "תן וקח".
-    * עיצוב מחדש של חלונית ההסבר: יישור מושלם לימין באמצעות HTML, ומשפט שרשרת.
+    * עיצוב מחדש של חלונית ההסבר ב-HTML ומשפט שרשרת.
 
-    **v1.5 + v1.5.1 + v1.5.2 | Tap Only, RTL, Changelog 👆**
-    * חיסלנו את המקלדת הקופצת במובייל! לחיצות בלבד.
-    * הוספת כפתור ה-Changelog.
-    * יישור לימין של רשימות.
+    **v1.5 - v1.5.2 | Tap Only, RTL, Changelog 👆**
+    * חיסול המקלדת הקופצת במובייל.
+    * הוספת כפתור ה-Changelog ויישור לימין.
 
     **v1.4 | חופש תמורת חופש 🏖️**
     * דילים חכמים לחופש: שומרים על מאזן המשמרות מול קולגות.
 
-    **v1.3 | חלונות קופצים 🧼**
-    * עורך ההודעות עבר לחלון קופץ אלגנטי (Pop-up).
-
-    **v1.2 | גרסת האימפריה 👑**
-    * מדד עומס, רשימת חרם (Blacklist), ודיווח יבש להנהלה.
+    **v1.2 - v1.3 | גרסת האימפריה 👑**
+    * עורך הודעות קופץ, מדד עומס, רשימת חרם (Blacklist), ודיווח יבש להנהלה.
     """)
     if st.button("סגירה", use_container_width=True):
         st.rerun()
@@ -132,7 +118,7 @@ def check_legal_rest(person_taking_shift, shift_to_take, day_taking, df):
             if partner_next_shift in ["בוקר ☀️", "בוקר ארוך 🌤️"]:
                 return False 
                 
-    # חוק 2: אם אני לוקח בוקר, אסור לי לילה ביום שלפני (הבאג שתוקן!)
+    # חוק 2: אם אני לוקח בוקר, אסור לי לילה ביום שלפני
     if shift_to_take in ["בוקר ☀️", "בוקר ארוך 🌤️"]:
         if idx - 1 >= 0:
             prev_day = days[idx - 1]
@@ -245,7 +231,7 @@ def main():
     
     col_ver, col_btn = st.columns([2, 1])
     with col_ver:
-        st.caption("v1.7 | אופטימיזציה מטורפת 🚀")
+        st.caption("v1.7.1 | מינימליזם 🧹")
     with col_btn:
         if st.button("מה התחדש?", type="tertiary", use_container_width=True):
             show_changelog()
@@ -287,24 +273,9 @@ def main():
         st.info("👆 לחץ על השם שלך כדי להתחיל")
         st.stop()
 
-    # --- תצוגת "השבוע שלי" ---
-    st.markdown("##### 📅 השבוע שלי:")
-    my_full_week = df[df['שם'] == user_name].iloc[0].to_dict()
-    days_only = {k: v for k, v in my_full_week.items() if k != 'שם'}
-    
-    # הצגת ימי השבוע בתוך עמודות יפות
-    week_cols = st.columns(len(days_only))
-    for col, (day, shift) in zip(week_cols, days_only.items()):
-        with col:
-            color = "#e8f5e9" if shift != "חופש 🌴" else "#ffebee"
-            st.markdown(f"""
-            <div style="border: 1px solid #ccc; border-radius: 5px; padding: 5px; text-align: center; background-color: {color}; margin-bottom: 10px;">
-                <div style="font-size: 0.75rem; font-weight: bold; color: #555;">{day}</div>
-                <div style="font-size: 0.85rem;">{shift}</div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-    my_active_shifts = {day: shift for day, shift in days_only.items() if shift != 'חופש 🌴'}
+    # חילוץ המשמרות של המשתמש (ללא תצוגת השבוע שלי)
+    user_shifts = df[df['שם'] == user_name].iloc[0].to_dict()
+    my_active_shifts = {day: shift for day, shift in user_shifts.items() if day != 'שם' and shift != 'חופש 🌴'}
 
     if not my_active_shifts:
         st.balloons()
