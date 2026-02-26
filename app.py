@@ -33,6 +33,18 @@ st.markdown("""
         h1 { font-size: 1.8rem !important; }
         div.row-widget.stRadio > div { flex-direction: row; flex-wrap: wrap; }
     }
+    
+    /* עיצוב לתצוגת השבוע שלי */
+    .week-day-box {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 5px;
+        text-align: center;
+        background-color: #f9f9f9;
+        margin-bottom: 10px;
+    }
+    .week-day-title { font-size: 0.8rem; font-weight: bold; color: #555;}
+    .week-day-shift { font-size: 0.9rem; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -274,6 +286,11 @@ def main():
     if not user_name: 
         st.info("👆 לחץ על השם שלך כדי להתחיל")
         st.stop()
+
+    # --- תצוגת "השבוע שלי" ---
+    st.markdown("##### 📅 השבוע שלי:")
+    my_full_week = df[df['שם'] == user_name].iloc[0].to_dict()
+    days_only = {k: v for k, v in my_full_week.items() if k != 'שם'}
     
     # הצגת ימי השבוע בתוך עמודות יפות
     week_cols = st.columns(len(days_only))
@@ -428,29 +445,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-                                           if st.button("שליחה בוואטסאפ 💬", key=f"b_{p_name}"):
-                                                edit_and_send_dialog(generate_whatsapp_msg(tone, curr_s, p_s, day, p_name))
-                                            with st.expander("🔀 ניסיון לדיל משולש"):
-                                                find_triangular_swap(user_name, curr_s, day, p_name, p_s, df, blacklist)
-
-                            # חיפוש חופש
-                            if "חופש 🌴" in wanted:
-                                free = df[(df[day] == 'חופש 🌴') & (df['שם'] != user_name) & (~df['שם'].isin(blacklist))]
-                                for _, p in free.iterrows():
-                                    p_n = p['שם']
-                                    if check_legal_rest(p_n, curr_s, day, df):
-                                        opts = [(d, s) for d, s in p.to_dict().items() if d not in ['שם', day] and s != 'חופש 🌴' and df[df['שם'] == user_name][d].values[0] == 'חופש 🌴' and check_legal_rest(user_name, s, d, df)]
-                                        if opts:
-                                            found = True
-                                            with st.container(border=True):
-                                                st.markdown(f"### 🌴 {p_n}")
-                                                idx = st.radio("איזו משמרת תיקח לו במקום?", range(len(opts)), format_func=lambda x: f"{opts[x][1]} ב{opts[x][0]}", key=f"c_{p_n}", horizontal=True)
-                                                if st.button("שליחה בוואטסאפ 💬", key=f"bc_{p_n}"):
-                                                    edit_and_send_dialog(generate_freedom_swap_msg("רגיל", curr_s, day, opts[idx][1], opts[idx][0], p_n))
-
-                            if not found: st.error("אין פראיירים פנויים כרגע. ☕")
-        except Exception as e: st.error(f"שגיאה בקובץ: {e}")
-
-if __name__ == "__main__": main()
-
-
