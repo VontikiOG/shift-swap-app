@@ -31,9 +31,20 @@ st.markdown("""
     @media (max-width: 768px) {
         .block-container { padding-top: 1.5rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
         h1 { font-size: 1.8rem !important; }
-        /* עיצוב כפתורי הרדיו במובייל שיהיו נוחים ללחיצה */
         div.row-widget.stRadio > div { flex-direction: row; flex-wrap: wrap; }
     }
+    
+    /* עיצוב לתצוגת השבוע שלי */
+    .week-day-box {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 5px;
+        text-align: center;
+        background-color: #f9f9f9;
+        margin-bottom: 10px;
+    }
+    .week-day-title { font-size: 0.8rem; font-weight: bold; color: #555;}
+    .week-day-shift { font-size: 0.9rem; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -41,20 +52,22 @@ st.markdown("""
 @st.dialog("📜 יומן שינויים (Changelog)")
 def show_changelog():
     st.markdown("""
+    **v1.7 | אופטימיזציה ובאגים 🚀**
+    * תיקון אלגוריתם שעות מנוחה: בודק גם קדימה (לילה -> בוקר) וגם אחורה (בוקר <- לילה).
+    * אופטימיזציית Cache לטעינה מהירה של הנתונים.
+    * נוספה תצוגת "השבוע שלי" בראש העמוד.
+
     **v1.6 | ההסבר המשולש 🔺**
     * שכתוב מלא של הסבר ההחלפה המשולשת בוואטסאפ לשיטת "תן וקח".
-    * עיצוב מחדש של חלונית ההסבר: יישור מושלם לימין באמצעות HTML, ומשפט שרשרת שמסביר הכל בפשטות.
+    * עיצוב מחדש של חלונית ההסבר: יישור מושלם לימין באמצעות HTML, ומשפט שרשרת.
 
-    **v1.5.1 + v1.5.2 | יישור לימין ויומן שינויים 📐**
+    **v1.5 + v1.5.1 + v1.5.2 | Tap Only, RTL, Changelog 👆**
+    * חיסלנו את המקלדת הקופצת במובייל! לחיצות בלבד.
     * הוספת כפתור ה-Changelog.
-    * תוקן באג תצוגה: יישור לימין של רשימות.
-
-    **v1.5 | גרסת ה-Tap Only 👆**
-    * חיסלנו את המקלדת הקופצת במובייל! מעבר לשימוש ב"קפסולות" (Pills) ולחיצות בלבד.
+    * יישור לימין של רשימות.
 
     **v1.4 | חופש תמורת חופש 🏖️**
     * דילים חכמים לחופש: שומרים על מאזן המשמרות מול קולגות.
-    * הוספת "כרית אוויר" בתחתית המסך.
 
     **v1.3 | חלונות קופצים 🧼**
     * עורך ההודעות עבר לחלון קופץ אלגנטי (Pop-up).
@@ -65,7 +78,6 @@ def show_changelog():
     if st.button("סגירה", use_container_width=True):
         st.rerun()
 
-# --- חלון קופץ: עריכת הודעה לפני וואטסאפ ---
 @st.dialog("רגע לפני ששולחים... 💬")
 def edit_and_send_dialog(default_msg):
     st.markdown("כאן אפשר לערוך, להוסיף סמיילי או להכניס עקיצה אישית לפני המעבר לוואטסאפ:")
@@ -73,6 +85,8 @@ def edit_and_send_dialog(default_msg):
     url = f"https://wa.me/?text={urllib.parse.quote(edited_msg)}"
     st.link_button("🚀 פתיחת וואטסאפ ושליחה", url, use_container_width=True)
 
+# שימוש בקאשינג! הפונקציה הזו תרוץ פעם אחת בלבד ותחסוך משאבים
+@st.cache_data
 def clean_dataframe(df):
     df.columns = df.columns.astype(str).str.strip()
     df = df.drop(columns=['אחוז משרה'], errors='ignore')
@@ -103,17 +117,29 @@ def clean_dataframe(df):
     return df
 
 def check_legal_rest(person_taking_shift, shift_to_take, day_taking, df):
-    if shift_to_take not in ["לילה 🌙", "לילה ארוך 🦉"]:
-        return True 
-        
+    """אלגוריתם משופר לבדיקת שעות מנוחה (קדימה ואחורה)"""
     days = [col for col in df.columns if col != 'שם']
-    if day_taking in days:
-        idx = days.index(day_taking)
+    if day_taking not in days:
+        return True
+        
+    idx = days.index(day_taking)
+    
+    # חוק 1: אם אני לוקח לילה, אסור לי בוקר ביום שאחרי
+    if shift_to_take in ["לילה 🌙", "לילה ארוך 🦉"]:
         if idx + 1 < len(days):
             next_day = days[idx + 1]
             partner_next_shift = df[df['שם'] == person_taking_shift][next_day].values[0]
             if partner_next_shift in ["בוקר ☀️", "בוקר ארוך 🌤️"]:
                 return False 
+                
+    # חוק 2: אם אני לוקח בוקר, אסור לי לילה ביום שלפני (הבאג שתוקן!)
+    if shift_to_take in ["בוקר ☀️", "בוקר ארוך 🌤️"]:
+        if idx - 1 >= 0:
+            prev_day = days[idx - 1]
+            partner_prev_shift = df[df['שם'] == person_taking_shift][prev_day].values[0]
+            if partner_prev_shift in ["לילה 🌙", "לילה ארוך 🦉"]:
+                return False
+                
     return True
 
 def get_workload_text(person_name, df):
@@ -187,7 +213,6 @@ def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, per
                 st.markdown(f"ההצעה ל{person_a_name}: משמרת **{s}** ב{d} (של {b_name})")
                 st.caption(f"על המושיע/ה: {workload_b}")
                 
-                # הניסוח החדש בוואטסאפ: תן וקח נקי
                 explanation_text = f"הנה ההצעה: אתה נותן לי את משמרת {person_a_shift} ב{selected_day}, ומקבל במקומה את משמרת {s} ב{d} של {b_name}. {b_name} סוגר לי את הפינה ולוקח את המשמרת שלי ({user_shift} ב{selected_day}), וככה כולם מסודרים!"
                 default_msg = f"היי {person_a_name}. פתרתי לנו את הבעיה עם דיל משולש! {explanation_text} איך זה נשמע? תציל אותי."
                 
@@ -197,7 +222,6 @@ def find_triangular_swap(user_name, user_shift, selected_day, person_a_name, per
                         edit_and_send_dialog(default_msg)
                 with col_pop:
                     with st.popover("💡 איך ההחלפה עובדת?", use_container_width=True):
-                        # הזרקת HTML ישירה ליישור מוחלט לימין ולשרשרת ההסבר המדויקת
                         html_explanation = f"""
                         <div dir="rtl" style="text-align: right; font-family: sans-serif; line-height: 1.6;">
                             <b>השורה התחתונה - מי עובד מתי?</b><br><br>
@@ -221,7 +245,7 @@ def main():
     
     col_ver, col_btn = st.columns([2, 1])
     with col_ver:
-        st.caption("v1.6 | ההסבר המשולש 🔺")
+        st.caption("v1.7 | אופטימיזציה מטורפת 🚀")
     with col_btn:
         if st.button("מה התחדש?", type="tertiary", use_container_width=True):
             show_changelog()
@@ -241,7 +265,8 @@ def main():
         else:
             df = pd.read_excel(uploaded_file, skiprows=rows_to_skip)
             
-        df = clean_dataframe(df)
+        df = clean_dataframe(df) # קריאה לפונקציה השמורה ב-Cache
+        
         with st.expander("👀 הצצה לסידור המלא (בלי צבעים עושי מיגרנה)"):
             st.dataframe(df, use_container_width=True)
     except Exception as e:
@@ -262,8 +287,24 @@ def main():
         st.info("👆 לחץ על השם שלך כדי להתחיל")
         st.stop()
 
-    user_shifts = df[df['שם'] == user_name].iloc[0].to_dict()
-    my_active_shifts = {day: shift for day, shift in user_shifts.items() if day != 'שם' and shift != 'חופש 🌴'}
+    # --- תצוגת "השבוע שלי" ---
+    st.markdown("##### 📅 השבוע שלי:")
+    my_full_week = df[df['שם'] == user_name].iloc[0].to_dict()
+    days_only = {k: v for k, v in my_full_week.items() if k != 'שם'}
+    
+    # הצגת ימי השבוע בתוך עמודות יפות
+    week_cols = st.columns(len(days_only))
+    for col, (day, shift) in zip(week_cols, days_only.items()):
+        with col:
+            color = "#e8f5e9" if shift != "חופש 🌴" else "#ffebee"
+            st.markdown(f"""
+            <div style="border: 1px solid #ccc; border-radius: 5px; padding: 5px; text-align: center; background-color: {color}; margin-bottom: 10px;">
+                <div style="font-size: 0.75rem; font-weight: bold; color: #555;">{day}</div>
+                <div style="font-size: 0.85rem;">{shift}</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+    my_active_shifts = {day: shift for day, shift in days_only.items() if shift != 'חופש 🌴'}
 
     if not my_active_shifts:
         st.balloons()
