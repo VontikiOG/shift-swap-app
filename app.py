@@ -209,7 +209,8 @@ def clean_dataframe(df):
                 "חופש": "חופש 🌴"
             }
             for k, v in mapping.items():
-                df[col] = df[col].apply(lambda x: v if x.strip() == k else x)
+                # התיקון כאן: הוספתי str(x) לפני ה-strip כדי למנוע קריסת float
+                df[col] = df[col].apply(lambda x: v if str(x).strip() == k else x)
                 
     df = df.replace(["nan", "None", "", "NaN"], "חופש 🌴")
     df = df.fillna("חופש 🌴")
